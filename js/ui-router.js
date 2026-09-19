@@ -3,6 +3,17 @@
  * Điều hướng màn hình, tab và render giao diện Liquid Glass di động
  */
 
+// Hàm làm sạch chuỗi chống tấn công XSS từ file Word
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 class UIRouter {
   constructor(stateManager, historyDb) {
     this.state = stateManager;
@@ -257,7 +268,7 @@ class UIRouter {
                 ${opt.key}
               </div>
               <span class="font-body-md text-on-surface text-[15px] leading-snug">
-                ${opt.text}
+                ${escapeHtml(opt.text)}
               </span>
             </div>
             ${trailingIcon}
@@ -424,7 +435,7 @@ class UIRouter {
               <span class="w-6 h-6 rounded-md font-mono text-xs font-semibold flex items-center justify-center ${opt.key === d.correctAnswer ? 'bg-tertiary text-white' : (opt.key === d.userAnswer ? 'bg-error text-white' : 'bg-slate-100')}">
                 ${opt.key}
               </span>
-              <span>${opt.text}</span>
+              <span>${escapeHtml(opt.text)}</span>
             </div>
             ${opt.key === d.correctAnswer ? '<span class="text-xs font-semibold text-tertiary">Đáp án đúng</span>' : ''}
             ${opt.key === d.userAnswer && !d.isCorrect ? '<span class="text-xs font-semibold text-error">Bạn chọn</span>' : ''}
@@ -439,7 +450,7 @@ class UIRouter {
             ${statusBadge}
           </div>
           <p class="font-body-md text-on-surface text-[15px] font-medium leading-relaxed">
-            ${d.text}
+            ${escapeHtml(d.text)}
           </p>
           <div class="flex flex-col gap-2 mt-1">
             ${optionsHtml}
@@ -449,7 +460,7 @@ class UIRouter {
               <strong class="text-accent font-semibold flex items-center gap-1 mb-1">
                 <span class="material-symbols-outlined text-[16px]">info</span> Lời giải chi tiết:
               </strong>
-              ${d.explanation}
+              ${escapeHtml(d.explanation)}
             </div>
           ` : ''}
         </div>
@@ -499,7 +510,7 @@ class UIRouter {
             </div>
             <div class="flex flex-col min-w-0">
               <h4 class="font-title-md text-[15px] font-semibold text-on-surface truncate leading-tight mb-0.5">
-                ${q.title}
+                ${escapeHtml(q.title)}
               </h4>
               <div class="flex items-center gap-2 font-caption text-xs text-on-surface-variant">
                 <span>${q.totalQuestions} câu</span>
@@ -557,15 +568,15 @@ class UIRouter {
         <div class="p-4 rounded-[20px] bg-surface-container-lowest border border-outline-variant/30 shadow-sm flex flex-col gap-2.5">
           <div class="flex items-center justify-between">
             <span class="font-mono-metric text-xs font-bold text-error">CÂU SAI #${idx + 1}</span>
-            <span class="font-caption text-xs text-outline">${m.quizTitle}</span>
+            <span class="font-caption text-xs text-outline">${escapeHtml(m.quizTitle)}</span>
           </div>
           <p class="font-body-md text-on-surface text-[14px] font-medium leading-relaxed">
-            ${m.text}
+            ${escapeHtml(m.text)}
           </p>
           <div class="p-3 rounded-xl bg-surface-container-low text-xs flex flex-col gap-1">
-            <div class="text-error font-medium">Bạn đã chọn: ${m.userAnswer || 'Chưa chọn'}</div>
-            <div class="text-tertiary font-medium">Đáp án đúng: ${m.correctAnswer}</div>
-            ${m.explanation ? `<div class="text-slate-600 mt-1 italic">${m.explanation}</div>` : ''}
+            <div class="text-error font-medium">Bạn đã chọn: ${escapeHtml(m.userAnswer) || 'Chưa chọn'}</div>
+            <div class="text-tertiary font-medium">Đáp án đúng: ${escapeHtml(m.correctAnswer)}</div>
+            ${m.explanation ? `<div class="text-slate-600 mt-1 italic">${escapeHtml(m.explanation)}</div>` : ''}
           </div>
           <div class="flex justify-end pt-1">
             <button class="px-3 py-1.5 rounded-lg text-xs font-medium text-tertiary bg-emerald-50 hover:bg-emerald-100 flex items-center gap-1 transition-all" onclick="window.quizApp.resolveMistake('${m.id}')">

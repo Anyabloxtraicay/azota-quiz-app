@@ -54,11 +54,17 @@
     };
   </script>
 
-  <!-- External Libraries -->
-  <!-- Mammoth.js for Word (.docx) browser parsing -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
-  <!-- Canvas Confetti for high score celebrations -->
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <!-- External Libraries (Local First for 100% Offline Resilience) -->
+  <script src="lib/mammoth.browser.min.js"></script>
+  <script src="lib/confetti.browser.min.js"></script>
+  <script>
+    if (!window.mammoth) {
+      document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"><\/script>');
+    }
+    if (!window.confetti) {
+      document.write('<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"><\/script>');
+    }
+  </script>
 
   <!-- Custom Liquid Glass Stylesheet -->
   <link rel="stylesheet" href="style.css">
