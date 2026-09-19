@@ -62,10 +62,45 @@ body {
   min-height: 100dvh;
 }
 
+/* The native WebView must use the full phone width, not the desktop preview frame. */
+@media (max-width: 767px) {
+  #app-container,
+  #view-quiz > footer,
+  #bottom-nav {
+    width: 100%;
+    max-width: none;
+    margin-left: 0;
+    margin-right: 0;
+  }
+}
+
 /* User-provided quiz content must wrap rather than force an extra-wide layout. */
 .text-wrap-safe {
   overflow-wrap: anywhere;
   word-break: break-word;
+}
+
+body.question-matrix-open {
+  overflow: hidden;
+}
+
+.quiz-question-card {
+  scroll-margin-top: 5.5rem;
+}
+
+.question-matrix-sheet {
+  animation: question-matrix-sheet-in 0.24s ease-out both;
+}
+
+@keyframes question-matrix-sheet-in {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@media (min-width: 768px) {
+  .question-matrix-sheet {
+    max-height: calc(100dvh - 1rem);
+  }
 }
 
 /* Reserve enough room for the fixed quiz controls on short screens and devices with safe areas. */

@@ -225,35 +225,50 @@ class App {
       btnStart.addEventListener('click', () => this.startQuiz());
     }
 
-    // 8. Các nút điều hướng trong phòng thi
-    const btnPrev = document.getElementById('btn-quiz-prev');
-    const btnNext = document.getElementById('btn-quiz-next');
+    // 8. Điều khiển trong phòng thi dạng cuộn dọc
     const btnSubmit = document.getElementById('btn-quiz-submit');
-    const btnFlag = document.getElementById('btn-quiz-flag');
     const btnBack = document.getElementById('btn-quiz-back');
     const btnShuffle = document.getElementById('btn-quiz-shuffle');
-
-    if (btnPrev) btnPrev.addEventListener('click', () => {
-      this.state.prevQuestion();
-      this.router.renderQuizScreen();
-    });
-
-    if (btnNext) btnNext.addEventListener('click', () => {
-      this.state.nextQuestion();
-      this.router.renderQuizScreen();
-    });
-
-    if (btnFlag) btnFlag.addEventListener('click', () => {
-      const q = this.state.activeQuiz.questions[this.state.currentQuestionIndex];
-      if (q) {
-        this.state.toggleFlag(q.id);
-        this.router.renderQuizScreen();
-      }
-    });
+    const btnMatrixToggle = document.getElementById('btn-quiz-matrix-toggle');
+    const btnMatrixClose = document.getElementById('btn-question-matrix-close');
+    const matrixBackdrop = document.getElementById('btn-question-matrix-backdrop');
+    const questionStream = document.getElementById('quiz-question-stream');
+    const matrixGrid = document.getElementById('question-matrix-grid');
 
     if (btnSubmit) btnSubmit.addEventListener('click', () => this.confirmSubmitQuiz());
 
     if (btnBack) btnBack.addEventListener('click', () => this.confirmExitQuiz());
+
+    if (btnMatrixToggle) btnMatrixToggle.addEventListener('click', () => this.router.openQuestionMatrix());
+    if (btnMatrixClose) btnMatrixClose.addEventListener('click', () => this.router.closeQuestionMatrix());
+    if (matrixBackdrop) matrixBackdrop.addEventListener('click', () => this.router.closeQuestionMatrix());
+
+    if (questionStream) {
+      questionStream.addEventListener('click', (event) => {
+        const card = event.target.closest('[data-question-index]');
+        if (!card) return;
+
+        const index = Number(card.dataset.questionIndex);
+        if (!Number.isInteger(index)) return;
+
+        const flagButton = event.target.closest('[data-quiz-action="toggle-flag"]');
+        if (flagButton) {
+          this.toggleQuestionFlag(index);
+          return;
+        }
+
+        const optionButton = event.target.closest('[data-option-key]');
+        if (optionButton) this.selectAnswerAtIndex(index, optionButton.dataset.optionKey);
+      });
+    }
+
+    if (matrixGrid) {
+      matrixGrid.addEventListener('click', (event) => {
+        const matrixButton = event.target.closest('[data-matrix-index]');
+        if (!matrixButton) return;
+        this.goToQuestion(Number(matrixButton.dataset.matrixIndex));
+      });
+    }
 
     if (btnShuffle) btnShuffle.addEventListener('click', () => {
       this.restartCurrentQuiz({
@@ -323,10 +338,7 @@ class App {
       });
     }
 
-    // 11. Vuốt chạm trên màn hình di động (Touch Gestures)
-    this.setupTouchGestures();
-
-    // 12. Phím tắt bàn phím
+    // 11. Phím tắt bàn phím
     this.setupKeyboardShortcuts();
   }
 
@@ -449,13 +461,34 @@ class App {
   }
 
   selectAnswer(qId, key) {
-    this.state.selectAnswer(qId, key);
-    this.router.renderQuizScreen();
+    const index = this.state.activeQuiz?.questions.findIndex(question => String(question.id) === String(qId));
+    if (index >= 0) this.selectAnswerAtIndex(index, key);
+  }
+
+  selectAnswerAtIndex(index, key) {
+    const question = this.state.activeQuiz?.questions[index];
+    if (!question) return;
+
+    this.state.goToQuestion(index);
+    this.state.selectAnswer(question.id, key);
+    this.router.updateQuestionCard(index);
+  }
+
+  toggleQuestionFlag(index) {
+    const question = this.state.activeQuiz?.questions[index];
+    if (!question) return;
+
+    this.state.goToQuestion(index);
+    this.state.toggleFlag(question.id);
+    this.router.updateQuestionCard(index);
   }
 
   goToQuestion(idx) {
+    if (!Number.isInteger(idx)) return;
     this.state.goToQuestion(idx);
-    this.router.renderQuizScreen();
+    this.router.refreshQuizStatus();
+    this.router.closeQuestionMatrix();
+    requestAnimationFrame(() => this.router.scrollToQuestion(idx));
   }
 
   confirmSubmitQuiz() {
@@ -678,12 +711,8 @@ class App {
     window.addEventListener('keydown', (e) => {
       if (this.router.currentView !== 'quiz') return;
 
-      if (e.key === 'ArrowRight') {
-        this.state.nextQuestion();
-        this.router.renderQuizScreen();
-      } else if (e.key === 'ArrowLeft') {
-        this.state.prevQuestion();
-        this.router.renderQuizScreen();
+      if (e.key === 'Escape') {
+        this.router.closeQuestionMatrix();
       } else if (['1', '2', '3', '4', 'a', 'b', 'c', 'd', 'A', 'B', 'C', 'D'].includes(e.key)) {
         const q = this.state.activeQuiz.questions[this.state.currentQuestionIndex];
         if (!q) return;

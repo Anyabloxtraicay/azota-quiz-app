@@ -42,8 +42,13 @@ class UIRouter {
     this.bottomNav = document.getElementById('bottom-nav');
     this.navItems = document.querySelectorAll('.bottom-nav-item');
 
-    // Modals
-    this.matrixModal = document.getElementById('matrix-modal');
+    // Question matrix bottom sheet
+    this.matrixModal = document.getElementById('question-matrix-modal');
+    this.matrixGrid = document.getElementById('question-matrix-grid');
+    this.matrixSummary = document.getElementById('question-matrix-summary');
+    this.matrixToggle = document.getElementById('btn-quiz-matrix-toggle');
+    this.questionObserver = null;
+    this.persistScrollPositionTimer = null;
   }
 
   // =========================================================================
@@ -52,6 +57,7 @@ class UIRouter {
 
   switchView(viewName) {
     this.currentView = viewName;
+    if (viewName !== 'quiz') this.closeQuestionMatrix();
 
     // Ẩn tất cả view
     this.viewHome.classList.add('hidden');
@@ -120,16 +126,26 @@ class UIRouter {
   renderQuizScreen() {
     if (!this.state.activeQuiz) return;
 
-    const currentQ = this.state.activeQuiz.questions[this.state.currentQuestionIndex];
-    if (!currentQ) return;
+    this.renderQuizHeader();
+    this.renderQuizProgress();
+    this.renderQuestionStream();
+    this.renderQuestionMatrix();
 
-    // 1. Cập nhật Header
+    if (this.state.currentQuestionIndex > 0) {
+      requestAnimationFrame(() => this.scrollToQuestion(this.state.currentQuestionIndex, 'auto'));
+    }
+  }
+
+  renderQuizHeader() {
+    if (!this.state.activeQuiz) return;
+
     const titleEl = document.getElementById('quiz-header-title');
     const codeEl = document.getElementById('quiz-header-code');
-    if (titleEl) titleEl.textContent = this.state.activeQuiz.title || 'Phòng Thi Trắc Nghiệm';
-    if (codeEl) codeEl.textContent = `Câu ${this.state.currentQuestionIndex + 1} / ${this.state.activeQuiz.questions.length}`;
+    const totalQuestions = this.state.activeQuiz.questions.length;
 
-    // 2. Cập nhật Timer Pill
+    if (titleEl) titleEl.textContent = this.state.activeQuiz.title || 'Phòng Thi Trắc Nghiệm';
+    if (codeEl) codeEl.textContent = `Câu ${this.state.currentQuestionIndex + 1} / ${totalQuestions}`;
+
     const timerContainer = document.getElementById('quiz-timer-container');
     const timerText = document.getElementById('quiz-timer-text');
     if (timerContainer) {
@@ -148,11 +164,14 @@ class UIRouter {
         }
       }
     }
+  }
 
-    // 3. Cập nhật Progress Bar
-    const answeredCount = Object.keys(this.state.answers).length;
+  renderQuizProgress() {
+    if (!this.state.activeQuiz) return;
+
+    const answeredCount = this.getAnsweredCount();
     const totalQ = this.state.activeQuiz.questions.length;
-    const percent = Math.round((answeredCount / totalQ) * 100);
+    const percent = totalQ > 0 ? Math.round((answeredCount / totalQ) * 100) : 0;
 
     const progressText = document.getElementById('quiz-progress-text');
     const progressPercent = document.getElementById('quiz-progress-percent');
@@ -163,181 +182,222 @@ class UIRouter {
     if (progressPercent) progressPercent.textContent = `${percent}%`;
     if (progressBar) progressBar.style.width = `${percent}%`;
     if (headerProgress) headerProgress.style.width = `${percent}%`;
-
-    // 4. Cập nhật Ma trận câu hỏi vuốt ngang
-    this.renderMatrixStrip();
-
-    // 5. Cập nhật Thẻ Câu Hỏi
-    this.renderQuestionCard(currentQ);
-
-    // 6. Cập nhật Bottom Action Bar
-    this.renderActionBar(currentQ);
   }
 
-  /**
-   * Render ma trận câu hỏi vuốt ngang
-   */
-  renderMatrixStrip() {
-    const strip = document.getElementById('quiz-matrix-strip');
-    if (!strip || !this.state.activeQuiz) return;
+  getAnsweredCount() {
+    if (!this.state.activeQuiz?.questions) return 0;
+    return this.state.activeQuiz.questions.filter(q => !!this.state.answers[q.id]).length;
+  }
 
-    const questions = this.state.activeQuiz.questions;
-    const currentIndex = this.state.currentQuestionIndex;
+  refreshQuizStatus() {
+    this.renderQuizHeader();
+    this.renderQuizProgress();
+    this.renderQuestionMatrix();
+  }
 
-    strip.innerHTML = questions.map((q, idx) => {
-      const isCurrent = idx === currentIndex;
-      const isAnswered = !!this.state.answers[q.id];
-      const isFlagged = !!this.state.flagged[q.id];
-      const numStr = (idx + 1).toString().padStart(2, '0');
+  renderQuestionStream() {
+    const stream = document.getElementById('quiz-question-stream');
+    if (!stream || !this.state.activeQuiz) return;
 
-      let btnClass = 'flex-shrink-0 w-9 h-9 rounded-xl font-mono-metric text-mono-metric font-semibold flex items-center justify-center transition-all active:scale-95 relative ';
+    this.disconnectQuestionObserver();
+    stream.innerHTML = this.state.activeQuiz.questions
+      .map((question, index) => this.renderQuestionCard(question, index))
+      .join('');
 
-      if (isCurrent) {
-        btnClass += 'ring-2 ring-primary-container ring-offset-2 bg-primary text-on-primary shadow-md ';
-      } else if (isAnswered) {
-        btnClass += 'bg-primary-container text-on-primary shadow-[0_2px_6px_rgba(0,82,255,0.3)] ';
+    this.observeQuestionCards();
+  }
+
+  renderQuestionCard(question, index) {
+    const answer = this.state.answers[question.id];
+    const isPracticeMode = this.state.mode === 'practice';
+    const hasAnswer = !!answer;
+    const hasCorrectAnswer = !!question.correctAnswer;
+    const isFlagged = !!this.state.flagged[question.id];
+    const displayNumber = question.displayNumber || question.number || (index + 1);
+
+    const optionsHtml = (question.options || []).map(option => {
+      const isSelected = answer === option.key;
+      const isCorrect = question.correctAnswer === option.key;
+      let optionClass = 'w-full option-tile p-4 rounded-[20px] bg-white border-2 flex items-center justify-between gap-3 text-left transition-all shadow-sm ';
+      let badgeClass = 'w-9 h-9 rounded-full flex items-center justify-center font-mono-metric font-semibold text-[15px] shrink-0 ';
+      let trailingIcon = '';
+
+      if (isPracticeMode && hasAnswer && hasCorrectAnswer) {
+        if (isCorrect) {
+          optionClass += 'border-tertiary bg-[#F0FDF4] shadow-[0_4px_16px_rgba(16,185,129,0.15)] ';
+          badgeClass += 'bg-tertiary text-white ';
+          trailingIcon = '<span class="material-symbols-outlined text-tertiary text-[24px] shrink-0">check_circle</span>';
+        } else if (isSelected) {
+          optionClass += 'border-error bg-[#FEF2F2] shadow-[0_4px_16px_rgba(220,38,38,0.12)] ';
+          badgeClass += 'bg-error text-white ';
+          trailingIcon = '<span class="material-symbols-outlined text-error text-[24px] shrink-0">cancel</span>';
+        } else {
+          optionClass += 'border-slate-100 opacity-60 ';
+          badgeClass += 'bg-surface-container text-on-surface-variant ';
+        }
+      } else if (isSelected) {
+        optionClass += 'border-primary-container bg-primary-container/5 ring-1 ring-primary-container shadow-[0_4px_16px_rgba(0,82,255,0.12)] ';
+        badgeClass += 'bg-primary-container text-white ';
+        trailingIcon = '<span class="material-symbols-outlined text-primary-container text-[24px] shrink-0" style="font-variation-settings: \'FILL\' 1;">check_circle</span>';
       } else {
-        btnClass += 'bg-surface-container text-on-surface hover:bg-surface-container-high ';
+        optionClass += 'border-slate-200/80 hover:border-slate-300 hover:bg-slate-50/50 ';
+        badgeClass += 'bg-surface-container text-on-surface-variant ';
       }
 
-      let flagBadge = '';
-      if (isFlagged) {
-        flagBadge = `<span class="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-[#f97316] text-white flex items-center justify-center shadow-sm">
-          <span class="material-symbols-outlined text-[9px]" style="font-variation-settings: 'FILL' 1;">flag</span>
-        </span>`;
-      }
-
-      return `<button type="button" class="${btnClass}" onclick="window.quizApp.goToQuestion(${idx})">
-        ${numStr}
-        ${flagBadge}
-      </button>`;
+      return `
+        <button type="button" data-option-key="${escapeHtml(option.key)}" class="${optionClass}" aria-pressed="${isSelected}">
+          <span class="flex items-center gap-3.5 flex-1 min-w-0">
+            <span class="${badgeClass}">${escapeHtml(option.key)}</span>
+            <span class="font-body-md text-on-surface text-[15px] leading-snug text-wrap-safe">${escapeHtml(option.text)}</span>
+          </span>
+          ${trailingIcon}
+        </button>`;
     }).join('');
 
-    // Tự động cuộn đến nút đang chọn
-    const activeBtn = strip.children[currentIndex];
-    if (activeBtn) {
-      activeBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-    }
-  }
-
-  /**
-   * Render thẻ câu hỏi và các phương án A, B, C, D
-   */
-  renderQuestionCard(q) {
-    const questionNum = document.getElementById('question-number-pill');
-    const questionText = document.getElementById('question-content-text');
-    const optionsList = document.getElementById('options-container');
-    const explanationBox = document.getElementById('question-explanation-card');
-
-    if (questionNum) questionNum.textContent = `CÂU ${q.displayNumber || (this.state.currentQuestionIndex + 1)}`;
-    if (questionText) questionText.textContent = q.text || '';
-
-    const userAnswer = this.state.answers[q.id];
-    const isPracticeMode = this.state.mode === 'practice';
-    const hasAnswered = !!userAnswer;
-
-    if (optionsList) {
-      optionsList.innerHTML = (q.options || []).map((opt) => {
-        const isSelected = userAnswer === opt.key;
-        const isCorrect = q.correctAnswer === opt.key;
-
-        let cardClass = 'option-tile p-4 rounded-[20px] bg-white border-2 flex items-center justify-between cursor-pointer transition-all active:scale-[0.98] shadow-sm ';
-        let letterBadgeClass = 'w-9 h-9 rounded-full flex items-center justify-center font-mono-metric font-semibold text-[15px] shrink-0 ';
-        let trailingIcon = '';
-
-        if (isPracticeMode && hasAnswered) {
-          // Chế độ Luyện tập: Hiện ngay kết quả đúng / sai
-          if (isCorrect) {
-            cardClass += 'border-tertiary bg-[#F0FDF4] shadow-[0_4px_16px_rgba(16,185,129,0.15)] ';
-            letterBadgeClass += 'bg-tertiary text-white ';
-            trailingIcon = `<span class="material-symbols-outlined text-tertiary text-[24px]">check_circle</span>`;
-          } else if (isSelected) {
-            cardClass += 'border-error bg-[#FEF2F2] shadow-[0_4px_16px_rgba(220,38,38,0.12)] ';
-            letterBadgeClass += 'bg-error text-white ';
-            trailingIcon = `<span class="material-symbols-outlined text-error text-[24px]">cancel</span>`;
-          } else {
-            cardClass += 'border-slate-100 opacity-60 ';
-            letterBadgeClass += 'bg-surface-container text-on-surface-variant ';
-          }
-        } else {
-          // Chế độ Thi thử (hoặc Luyện tập khi chưa chọn)
-          if (isSelected) {
-            cardClass += 'border-primary-container bg-primary-container/5 ring-1 ring-primary-container shadow-[0_4px_16px_rgba(0,82,255,0.12)] ';
-            letterBadgeClass += 'bg-primary-container text-white ';
-            trailingIcon = `<span class="material-symbols-outlined text-primary-container text-[24px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>`;
-          } else {
-            cardClass += 'border-slate-200/80 hover:border-slate-300 hover:bg-slate-50/50 ';
-            letterBadgeClass += 'bg-surface-container text-on-surface-variant ';
-          }
-        }
-
-        return `
-          <div class="${cardClass}" onclick="window.quizApp.selectAnswer('${q.id}', '${opt.key}')">
-            <div class="flex items-center gap-3.5 flex-1 min-w-0 pr-2">
-              <div class="${letterBadgeClass}">
-                ${opt.key}
-              </div>
-              <span class="font-body-md text-on-surface text-[15px] leading-snug">
-                ${escapeHtml(opt.text)}
-              </span>
+    let feedbackHtml = '';
+    if (isPracticeMode && hasAnswer) {
+      if (hasCorrectAnswer) {
+        const isCorrect = answer === question.correctAnswer;
+        const feedbackTitle = isCorrect ? 'Chính xác!' : 'Chưa chính xác';
+        const feedbackClass = isCorrect
+          ? 'bg-emerald-50/70 border-emerald-200/60 text-emerald-900'
+          : 'bg-blue-50/70 border-blue-200/60 text-slate-800';
+        const feedbackIcon = isCorrect ? 'check_circle' : 'lightbulb';
+        const fallback = isCorrect
+          ? `Bạn đã chọn đúng đáp án ${question.correctAnswer}.`
+          : `Đáp án đúng là ${question.correctAnswer}.`;
+        feedbackHtml = `
+          <div class="mt-3 p-4 rounded-[20px] border shadow-sm text-xs leading-relaxed ${feedbackClass}">
+            <div class="flex items-center gap-1.5 font-bold mb-1 text-[13px]">
+              <span class="material-symbols-outlined text-[18px]">${feedbackIcon}</span>
+              <span>${feedbackTitle}</span>
             </div>
-            ${trailingIcon}
-          </div>
-        `;
-      }).join('');
-    }
-
-    // Hiển thị giải thích ở chế độ Luyện tập sau khi đã chọn đáp án
-    if (explanationBox) {
-      if (isPracticeMode && hasAnswered) {
-        explanationBox.classList.remove('hidden');
-        const expContent = document.getElementById('explanation-text-content');
-        if (expContent) {
-          expContent.textContent = q.explanation || `Đáp án đúng là ${q.correctAnswer}. (Chưa có chú thích chi tiết cho câu này)`;
-        }
+            <p class="text-wrap-safe">${escapeHtml(question.explanation || fallback)}</p>
+          </div>`;
       } else {
-        explanationBox.classList.add('hidden');
+        feedbackHtml = `
+          <div class="mt-3 p-4 rounded-[20px] bg-amber-50 border border-amber-200 text-amber-900 text-xs leading-relaxed">
+            <div class="flex items-center gap-1.5 font-bold mb-1 text-[13px]">
+              <span class="material-symbols-outlined text-[18px]">info</span>
+              <span>Chưa có đáp án chuẩn</span>
+            </div>
+            <p>Đề này chưa cung cấp đáp án để chấm tự động.</p>
+          </div>`;
       }
     }
+
+    return `
+      <article id="quiz-question-${index}" data-question-index="${index}" class="quiz-question-card rounded-[24px] bg-white p-5 border border-outline-variant/30 shadow-[0_12px_32px_-8px_rgba(19,27,46,0.08)]">
+        <div class="flex items-start justify-between gap-3 mb-3">
+          <span class="px-3 py-1 rounded-full bg-primary-container/10 text-primary-container font-mono-metric text-xs font-bold tracking-wide shrink-0">CÂU ${escapeHtml(displayNumber)}</span>
+          <button type="button" data-quiz-action="toggle-flag" title="${isFlagged ? 'Bỏ đánh dấu' : 'Đánh dấu câu này'}" aria-label="${isFlagged ? 'Bỏ đánh dấu câu ' : 'Đánh dấu câu '}${escapeHtml(displayNumber)}" class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all ${isFlagged ? 'bg-[#ffedd5] text-[#ea580c] border border-[#fdba74]' : 'bg-surface-container text-on-surface-variant border border-outline-variant/30'}">
+            <span class="material-symbols-outlined text-[20px]" ${isFlagged ? 'style="font-variation-settings: \'FILL\' 1;"' : ''}>flag</span>
+          </button>
+        </div>
+        <p class="font-body text-[16px] font-semibold text-on-surface leading-relaxed text-wrap-safe">${escapeHtml(question.text || '')}</p>
+        <div class="mt-4 space-y-2.5">${optionsHtml}</div>
+        ${feedbackHtml}
+      </article>`;
   }
 
-  /**
-   * Render thanh điều hướng dưới đáy khi làm bài
-   */
-  renderActionBar(q) {
-    const flagBtn = document.getElementById('btn-quiz-flag');
-    const prevBtn = document.getElementById('btn-quiz-prev');
-    const nextBtn = document.getElementById('btn-quiz-next');
-    const submitBtn = document.getElementById('btn-quiz-submit');
+  updateQuestionCard(index) {
+    if (!this.state.activeQuiz?.questions?.[index]) return;
 
-    const isFlagged = !!this.state.flagged[q.id];
-    if (flagBtn) {
-      if (isFlagged) {
-        flagBtn.className = 'w-12 h-12 rounded-2xl bg-[#ffedd5] text-[#ea580c] border border-[#fdba74] flex items-center justify-center transition-all';
-        flagBtn.innerHTML = `<span class="material-symbols-outlined text-[24px]" style="font-variation-settings: 'FILL' 1;">flag</span>`;
+    const oldCard = document.getElementById(`quiz-question-${index}`);
+    if (oldCard) {
+      this.questionObserver?.unobserve(oldCard);
+      oldCard.outerHTML = this.renderQuestionCard(this.state.activeQuiz.questions[index], index);
+      const newCard = document.getElementById(`quiz-question-${index}`);
+      if (newCard) this.questionObserver?.observe(newCard);
+    }
+
+    this.refreshQuizStatus();
+  }
+
+  renderQuestionMatrix() {
+    if (!this.matrixGrid || !this.state.activeQuiz) return;
+
+    const questions = this.state.activeQuiz.questions;
+    const answeredCount = this.getAnsweredCount();
+    if (this.matrixSummary) this.matrixSummary.textContent = `Đã làm ${answeredCount}/${questions.length} câu`;
+
+    this.matrixGrid.innerHTML = questions.map((question, index) => {
+      const isCurrent = index === this.state.currentQuestionIndex;
+      const isAnswered = !!this.state.answers[question.id];
+      const isFlagged = !!this.state.flagged[question.id];
+      const displayNumber = question.displayNumber || question.number || (index + 1);
+      let buttonClass = 'relative h-11 rounded-xl font-mono-metric text-sm font-semibold flex items-center justify-center transition-all active:scale-95 ';
+
+      if (isCurrent) {
+        buttonClass += 'ring-2 ring-primary-container ring-offset-2 bg-primary text-on-primary shadow-md ';
+      } else if (isAnswered) {
+        buttonClass += 'bg-primary-container text-on-primary shadow-[0_2px_6px_rgba(0,82,255,0.3)] ';
       } else {
-        flagBtn.className = 'w-12 h-12 rounded-2xl bg-surface-container text-on-surface-variant border border-outline-variant/30 flex items-center justify-center hover:bg-surface-container-high transition-all';
-        flagBtn.innerHTML = `<span class="material-symbols-outlined text-[24px]">flag</span>`;
+        buttonClass += 'bg-surface-container text-on-surface hover:bg-surface-container-high ';
       }
-    }
 
-    const isFirst = this.state.currentQuestionIndex === 0;
-    const isLast = this.state.currentQuestionIndex === this.state.activeQuiz.questions.length - 1;
+      const status = [
+        `Câu ${displayNumber}`,
+        isAnswered ? 'đã trả lời' : 'chưa trả lời',
+        isFlagged ? 'đã đánh dấu' : ''
+      ].filter(Boolean).join(', ');
 
-    if (prevBtn) {
-      prevBtn.disabled = isFirst;
-      prevBtn.classList.toggle('opacity-40', isFirst);
-    }
+      return `
+        <button type="button" data-matrix-index="${index}" class="${buttonClass}" aria-label="${escapeHtml(status)}" ${isCurrent ? 'aria-current="true"' : ''}>
+          ${escapeHtml(displayNumber)}
+          ${isFlagged ? '<span class="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-[#f97316] text-white flex items-center justify-center shadow-sm"><span class="material-symbols-outlined text-[9px]" style="font-variation-settings: \'FILL\' 1;">flag</span></span>' : ''}
+        </button>`;
+    }).join('');
+  }
 
-    if (nextBtn && submitBtn) {
-      if (isLast) {
-        nextBtn.classList.add('hidden');
-        submitBtn.classList.remove('hidden');
-      } else {
-        nextBtn.classList.remove('hidden');
-        submitBtn.classList.add('hidden');
-      }
-    }
+  openQuestionMatrix() {
+    if (!this.matrixModal) return;
+    this.renderQuestionMatrix();
+    this.matrixModal.classList.remove('hidden');
+    this.matrixModal.setAttribute('aria-hidden', 'false');
+    this.matrixToggle?.setAttribute('aria-expanded', 'true');
+    document.body.classList.add('question-matrix-open');
+  }
+
+  closeQuestionMatrix() {
+    if (!this.matrixModal) return;
+    this.matrixModal.classList.add('hidden');
+    this.matrixModal.setAttribute('aria-hidden', 'true');
+    this.matrixToggle?.setAttribute('aria-expanded', 'false');
+    document.body.classList.remove('question-matrix-open');
+  }
+
+  scrollToQuestion(index, behavior = 'smooth') {
+    const card = document.getElementById(`quiz-question-${index}`);
+    if (card) card.scrollIntoView({ behavior, block: 'start' });
+  }
+
+  observeQuestionCards() {
+    if (typeof IntersectionObserver === 'undefined') return;
+
+    this.questionObserver = new IntersectionObserver((entries) => {
+      const visibleEntry = entries
+        .filter(entry => entry.isIntersecting)
+        .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+      if (!visibleEntry) return;
+
+      const index = Number(visibleEntry.target.dataset.questionIndex);
+      if (!Number.isInteger(index) || index === this.state.currentQuestionIndex) return;
+
+      this.state.currentQuestionIndex = index;
+      this.renderQuizHeader();
+      this.renderQuestionMatrix();
+      clearTimeout(this.persistScrollPositionTimer);
+      this.persistScrollPositionTimer = setTimeout(() => this.state.saveSession(), 300);
+    }, { rootMargin: '-18% 0px -58% 0px', threshold: 0.15 });
+
+    document.querySelectorAll('.quiz-question-card').forEach(card => this.questionObserver.observe(card));
+  }
+
+  disconnectQuestionObserver() {
+    if (this.questionObserver) this.questionObserver.disconnect();
+    this.questionObserver = null;
+    clearTimeout(this.persistScrollPositionTimer);
   }
 
   // =========================================================================
