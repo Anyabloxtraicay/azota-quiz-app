@@ -1,0 +1,6 @@
+{
+  "version": "1.0.0",
+  "versionCode": 1,
+  "releaseName": "Phiên bản đầu tiên",
+  "releaseNotes": "🎉 Ra mắt Azota Quiz Master v1.0.0\n• Giao diện Liquid Glass siêu đẹp\n• Parser đề thi từ file Word (.docx)\n• Chế độ Luyện Tập & Thi Thử\n• Kho đề & Hộp câu sai thông minh\n• Logo tác giả Anh Tuấn"
+}

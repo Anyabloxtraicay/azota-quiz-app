@@ -117,6 +117,12 @@ class App {
     this.bindEvents();
     this.setupTimerCallbacks();
     this.checkResumeSession();
+
+    // Kiểm tra cập nhật phiên bản mới sau 2 giây (không chặn UI)
+    setTimeout(() => {
+      this.updater = new AppUpdater();
+      this.updater.checkForUpdates();
+    }, 2000);
   }
 
   // =========================================================================

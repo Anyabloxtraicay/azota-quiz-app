@@ -35,6 +35,7 @@ jobs:
           mkdir -p www
           cp index.html www/
           cp style.css www/
+          cp version.json www/
           cp -r js www/
           cp -r lib www/
 
@@ -66,9 +67,38 @@ jobs:
           cd android
           ./gradlew assembleDebug --stacktrace
 
-      - name: 11. Tải file APK lên GitHub Artifacts để người dùng tải về
+      - name: 11. Đọc phiên bản từ version.json
+        id: version
+        run: |
+          VERSION=$(cat version.json | python3 -c "import sys,json; print(json.load(sys.stdin)['version'])")
+          NOTES=$(cat version.json | python3 -c "import sys,json; print(json.load(sys.stdin).get('releaseNotes','Cập nhật mới'))")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          echo "$NOTES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          echo "📦 Phiên bản: v$VERSION"
+
+      - name: 12. Đổi tên APK theo phiên bản
+        run: |
+          cp android/app/build/outputs/apk/debug/app-debug.apk \
+             AzotaQuiz-v${{ steps.version.outputs.version }}.apk
+
+      - name: 13. Tạo GitHub Release với file APK đính kèm
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: "🎉 Azota Quiz Master v${{ steps.version.outputs.version }}"
+          body: ${{ steps.version.outputs.notes }}
+          draft: false
+          prerelease: false
+          files: AzotaQuiz-v${{ steps.version.outputs.version }}.apk
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 14. Tải file APK lên GitHub Artifacts (backup)
         uses: actions/upload-artifact@v4
         with:
           name: AzotaQuiz-LiquidGlass-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: AzotaQuiz-v${{ steps.version.outputs.version }}.apk
           retention-days: 14
