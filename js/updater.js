@@ -178,8 +178,18 @@ class AppUpdater {
     if (btnUpdate) {
       btnUpdate.onclick = () => {
         this._hideUpdateModal();
-        // Mở link tải APK (trình duyệt/hệ thống sẽ xử lý download)
-        window.open(this.downloadUrl, '_system');
+        // Mở link tải APK an toàn (hỗ trợ cả Capacitor Native và trình duyệt thông thường)
+        try {
+          const a = document.createElement('a');
+          a.href = this.downloadUrl;
+          a.target = '_blank';
+          a.rel = 'noopener noreferrer';
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => document.body.removeChild(a), 100);
+        } catch {
+          window.open(this.downloadUrl, '_system');
+        }
       };
     }
 
@@ -194,7 +204,7 @@ class AppUpdater {
   _formatReleaseNotes(md) {
     if (!md) return '<p class="text-on-surface-variant text-xs">Cập nhật mới với nhiều cải tiến.</p>';
 
-    // Escape HTML cơ bản
+    // Escape HTML cơ bản để chống XSS
     let safe = md
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
@@ -205,9 +215,9 @@ class AppUpdater {
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.+?)\*/g, '<em>$1</em>')
       .replace(/^[•\-]\s*(.+)$/gm, '<li class="ml-3 text-xs text-on-surface-variant leading-relaxed">$1</li>')
-      .replace(/\n/g, '');
+      .replace(/\n/g, '<br/>');
 
-    // Bọc li vào ul
+    // Bọc li vào ul nếu có danh sách
     if (safe.includes('<li')) {
       safe = '<ul class="space-y-1 list-disc list-inside">' + safe + '</ul>';
     }

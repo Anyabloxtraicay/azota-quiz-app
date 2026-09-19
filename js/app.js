@@ -231,6 +231,7 @@ class App {
     const btnSubmit = document.getElementById('btn-quiz-submit');
     const btnFlag = document.getElementById('btn-quiz-flag');
     const btnBack = document.getElementById('btn-quiz-back');
+    const btnShuffle = document.getElementById('btn-quiz-shuffle');
 
     if (btnPrev) btnPrev.addEventListener('click', () => {
       this.state.prevQuestion();
@@ -254,18 +255,26 @@ class App {
 
     if (btnBack) btnBack.addEventListener('click', () => this.confirmExitQuiz());
 
+    if (btnShuffle) btnShuffle.addEventListener('click', () => {
+      this.restartCurrentQuiz({
+        shuffleQuestions: true,
+        shuffleOptions: true,
+        confirmMessage: 'Đảo đề sẽ xóa toàn bộ đáp án và cờ đã đánh dấu để bắt đầu lại. Bạn có muốn tiếp tục?'
+      });
+    });
+
     // 9. Nút trên màn hình kết quả
     const btnRetake = document.getElementById('btn-result-retake');
+    const btnShuffleRetake = document.getElementById('btn-result-shuffle-retake');
     const btnHome = document.getElementById('btn-result-home');
     const btnReviewFilterAll = document.getElementById('filter-review-all');
     const btnReviewFilterWrong = document.getElementById('filter-review-wrong');
     const btnReviewFilterFlagged = document.getElementById('filter-review-flagged');
 
-    if (btnRetake) btnRetake.addEventListener('click', () => {
-      if (this.state.originalQuiz) {
-        this.loadedQuizData = this.state.originalQuiz;
-        this.startQuiz();
-      }
+    if (btnRetake) btnRetake.addEventListener('click', () => this.restartCurrentQuiz());
+
+    if (btnShuffleRetake) btnShuffleRetake.addEventListener('click', () => {
+      this.restartCurrentQuiz({ shuffleQuestions: true, shuffleOptions: true });
     });
 
     if (btnHome) btnHome.addEventListener('click', () => {
@@ -414,6 +423,29 @@ class App {
     this.state.initQuiz(this.loadedQuizData, options, this.selectedMode);
     this.router.switchView('quiz');
     this.router.renderQuizScreen();
+  }
+
+  restartCurrentQuiz({ shuffleQuestions, shuffleOptions, confirmMessage } = {}) {
+    if (!this.state.originalQuiz) return;
+
+    if (confirmMessage && !window.confirm(confirmMessage)) return;
+
+    const restarted = this.state.restartQuiz({
+      timeLimit: this.state.timeLimit,
+      shuffleQuestions: typeof shuffleQuestions === 'boolean'
+        ? shuffleQuestions
+        : this.state.options.shuffleQuestions,
+      shuffleOptions: typeof shuffleOptions === 'boolean'
+        ? shuffleOptions
+        : this.state.options.shuffleOptions
+    });
+
+    if (!restarted) return;
+
+    this.loadedQuizData = this.state.originalQuiz;
+    this.router.switchView('quiz');
+    this.router.renderQuizScreen();
+    this.showToast(shuffleQuestions || shuffleOptions ? 'Đã đảo đề và bắt đầu lại từ câu 1' : 'Đã làm lại đề từ câu 1');
   }
 
   selectAnswer(qId, key) {

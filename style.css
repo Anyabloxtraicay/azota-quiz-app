@@ -49,6 +49,74 @@ html, body {
   overscroll-behavior: none;
 }
 
+html,
+body {
+  min-height: 100dvh;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+#app-container {
+  min-height: 100dvh;
+}
+
+/* User-provided quiz content must wrap rather than force an extra-wide layout. */
+.text-wrap-safe {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Reserve enough room for the fixed quiz controls on short screens and devices with safe areas. */
+#view-quiz > main {
+  padding-bottom: calc(7rem + env(safe-area-inset-bottom, 0px));
+}
+
+@media (max-width: 380px) {
+  #view-quiz > main {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  #view-quiz > header > div {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+}
+
+@media (max-width: 340px) {
+  #view-quiz > footer > div {
+    gap: 0.5rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  #view-quiz > footer #btn-quiz-flag {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  #view-quiz > footer #btn-quiz-prev,
+  #view-quiz > footer #btn-quiz-next,
+  #view-quiz > footer #btn-quiz-submit {
+    height: 2.5rem;
+    font-size: 0.6875rem;
+  }
+
+  #bottom-nav .bottom-nav-item > span:last-child {
+    font-size: 0.625rem;
+    white-space: nowrap;
+  }
+}
+
+@media (max-height: 620px) {
+  #update-modal {
+    max-height: calc(100dvh - 2rem);
+    overflow-y: auto;
+  }
+}
+
 /* Mobile Safe Areas */
 .pt-safe {
   padding-top: env(safe-area-inset-top, 0px);

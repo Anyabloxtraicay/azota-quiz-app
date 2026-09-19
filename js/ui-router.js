@@ -131,11 +131,21 @@ class UIRouter {
 
     // 2. Cập nhật Timer Pill
     const timerContainer = document.getElementById('quiz-timer-container');
+    const timerText = document.getElementById('quiz-timer-text');
     if (timerContainer) {
       if (this.state.mode === 'practice') {
         timerContainer.classList.add('hidden');
       } else {
         timerContainer.classList.remove('hidden');
+        if (timerText) {
+          if (this.state.timeLimit === 0) {
+            timerText.textContent = 'Không giới hạn';
+          } else {
+            const minutes = Math.floor(this.state.timeLeft / 60);
+            const seconds = this.state.timeLeft % 60;
+            timerText.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+          }
+        }
       }
     }
 
@@ -503,16 +513,16 @@ class UIRouter {
       const highScoreStr = q.highScore !== undefined ? `${q.highScore.toFixed(1)}/10` : 'Chưa thi';
 
       return `
-        <div class="p-4 rounded-[20px] bg-surface-container-lowest border border-outline-variant/30 shadow-sm flex items-center justify-between gap-3">
+        <div class="p-4 rounded-[20px] bg-surface-container-lowest border border-outline-variant/30 shadow-sm flex items-start justify-between gap-3">
           <div class="flex items-center gap-3.5 min-w-0">
             <div class="w-11 h-11 rounded-2xl bg-primary-container/10 text-primary-container flex items-center justify-center shrink-0">
               <span class="material-symbols-outlined text-[24px]">description</span>
             </div>
             <div class="flex flex-col min-w-0">
-              <h4 class="font-title-md text-[15px] font-semibold text-on-surface truncate leading-tight mb-0.5">
+              <h4 class="font-title-md text-[15px] font-semibold text-on-surface text-wrap-safe leading-tight mb-0.5">
                 ${escapeHtml(q.title)}
               </h4>
-              <div class="flex items-center gap-2 font-caption text-xs text-on-surface-variant">
+              <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 font-caption text-xs text-on-surface-variant">
                 <span>${q.totalQuestions} câu</span>
                 <span>•</span>
                 <span class="text-tertiary font-semibold">Cao nhất: ${highScoreStr}</span>
@@ -566,9 +576,9 @@ class UIRouter {
     listEl.innerHTML = mistakes.map((m, idx) => {
       return `
         <div class="p-4 rounded-[20px] bg-surface-container-lowest border border-outline-variant/30 shadow-sm flex flex-col gap-2.5">
-          <div class="flex items-center justify-between">
+          <div class="flex flex-wrap items-center justify-between gap-2">
             <span class="font-mono-metric text-xs font-bold text-error">CÂU SAI #${idx + 1}</span>
-            <span class="font-caption text-xs text-outline">${escapeHtml(m.quizTitle)}</span>
+            <span class="font-caption text-xs text-outline text-right text-wrap-safe">${escapeHtml(m.quizTitle)}</span>
           </div>
           <p class="font-body-md text-on-surface text-[14px] font-medium leading-relaxed">
             ${escapeHtml(m.text)}

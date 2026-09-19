@@ -43,13 +43,13 @@ class QuizStateManager {
     this.originalQuiz = JSON.parse(JSON.stringify(quizData));
     this.mode = mode || 'practice';
     this.options = {
-      timeLimit: options.timeLimit || 30,
+      timeLimit: this.normalizeTimeLimit(options.timeLimit),
       shuffleQuestions: !!options.shuffleQuestions,
       shuffleOptions: !!options.shuffleOptions
     };
 
     this.timeLimit = this.options.timeLimit;
-    this.timeLeft = this.timeLimit * 60;
+    this.timeLeft = this.timeLimit > 0 ? this.timeLimit * 60 : 0;
     this.currentQuestionIndex = 0;
     this.answers = {};
     this.flagged = {};
@@ -63,9 +63,56 @@ class QuizStateManager {
     this.saveSession();
     this.emitChange();
 
-    if (this.mode === 'exam') {
+    if (this.mode === 'exam' && this.timeLimit > 0) {
       this.startTimer();
     }
+  }
+
+  /**
+   * Làm lại đề hiện tại từ đầu với cấu hình mới, giữ nguyên đề gốc.
+   * Dùng khi người học muốn đảo đề trong lúc đang làm hoặc sau khi xem kết quả.
+   */
+  restartQuiz(options = {}) {
+    if (!this.originalQuiz) return false;
+
+    this.stopTimer();
+    this.options = {
+      timeLimit: this.normalizeTimeLimit(
+        Object.prototype.hasOwnProperty.call(options, 'timeLimit')
+          ? options.timeLimit
+          : this.options.timeLimit
+      ),
+      shuffleQuestions: Object.prototype.hasOwnProperty.call(options, 'shuffleQuestions')
+        ? !!options.shuffleQuestions
+        : this.options.shuffleQuestions,
+      shuffleOptions: Object.prototype.hasOwnProperty.call(options, 'shuffleOptions')
+        ? !!options.shuffleOptions
+        : this.options.shuffleOptions
+    };
+
+    this.timeLimit = this.options.timeLimit;
+    this.timeLeft = this.timeLimit > 0 ? this.timeLimit * 60 : 0;
+    this.currentQuestionIndex = 0;
+    this.answers = {};
+    this.flagged = {};
+    this.startedAt = new Date().toISOString();
+    this.finishedAt = null;
+    this.isFinished = false;
+    this.activeQuiz = this.createActiveQuiz(this.originalQuiz, this.options);
+
+    this.saveSession();
+    this.emitChange();
+
+    if (this.mode === 'exam' && this.timeLimit > 0) {
+      this.startTimer();
+    }
+
+    return true;
+  }
+
+  normalizeTimeLimit(value) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) && parsed >= 0 ? Math.floor(parsed) : 30;
   }
 
   /**
@@ -354,16 +401,22 @@ class QuizStateManager {
     this.originalQuiz = sessionData.originalQuiz;
     this.activeQuiz = sessionData.activeQuiz;
     this.mode = sessionData.mode || 'practice';
-    this.options = sessionData.options || { timeLimit: 30 };
+    this.options = {
+      timeLimit: this.normalizeTimeLimit(sessionData.options?.timeLimit ?? sessionData.timeLimit),
+      shuffleQuestions: !!sessionData.options?.shuffleQuestions,
+      shuffleOptions: !!sessionData.options?.shuffleOptions
+    };
     this.currentQuestionIndex = sessionData.currentQuestionIndex || 0;
     this.answers = sessionData.answers || {};
     this.flagged = sessionData.flagged || {};
-    this.timeLeft = sessionData.timeLeft || 0;
-    this.timeLimit = sessionData.timeLimit || 30;
+    this.timeLimit = this.options.timeLimit;
+    this.timeLeft = typeof sessionData.timeLeft === 'number'
+      ? sessionData.timeLeft
+      : (this.timeLimit > 0 ? this.timeLimit * 60 : 0);
     this.startedAt = sessionData.startedAt;
     this.isFinished = !!sessionData.isFinished;
 
-    if (this.mode === 'exam' && !this.isFinished && this.timeLeft > 0) {
+    if (this.mode === 'exam' && this.timeLimit > 0 && !this.isFinished && this.timeLeft > 0) {
       this.startTimer();
     }
     this.emitChange();

@@ -8,15 +8,17 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: 1. Checkout mã nguồn
         uses: actions/checkout@v4
 
-      - name: 2. Cài đặt Node.js 20
+      - name: 2. Cài đặt Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: 3. Cài đặt Java 17 (JDK)
         uses: actions/setup-java@v4
@@ -83,10 +85,18 @@ jobs:
           cp android/app/build/outputs/apk/debug/app-debug.apk \
              AzotaQuiz-v${{ steps.version.outputs.version }}.apk
 
-      - name: 13. Tạo GitHub Release với file APK đính kèm
+      - name: 13. Tải file APK lên GitHub Artifacts (luôn chạy để có file tải ngay)
+        uses: actions/upload-artifact@v4
+        with:
+          name: AzotaQuiz-LiquidGlass-APK
+          path: AzotaQuiz-v${{ steps.version.outputs.version }}.apk
+          retention-days: 14
+
+      - name: 14. Tạo GitHub Release với file APK đính kèm
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.version.outputs.version }}
+          target_commitish: ${{ github.sha }}
           name: "🎉 Azota Quiz Master v${{ steps.version.outputs.version }}"
           body: ${{ steps.version.outputs.notes }}
           draft: false
@@ -96,9 +106,3 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 14. Tải file APK lên GitHub Artifacts (backup)
-        uses: actions/upload-artifact@v4
-        with:
-          name: AzotaQuiz-LiquidGlass-APK
-          path: AzotaQuiz-v${{ steps.version.outputs.version }}.apk
-          retention-days: 14

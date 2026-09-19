@@ -186,6 +186,37 @@ stateShuffle.activeQuiz.questions.forEach(shuffledQ => {
 });
 assert(allCorrectMapped, 'Sau khi đảo phương án ngẫu nhiên, đáp án đúng vẫn trỏ chính xác về nội dung đúng');
 
+// Test thời gian không giới hạn và đảo đề làm lại từ đề gốc
+const unlimitedState = new QuizStateManager();
+unlimitedState.initQuiz(mockQuizData, { timeLimit: 0, shuffleQuestions: false, shuffleOptions: false }, 'exam');
+assert(unlimitedState.timeLimit === 0, 'Chế độ không giới hạn giữ thời gian là 0 phút');
+assert(unlimitedState.timerInterval === null, 'Chế độ không giới hạn không khởi tạo bộ đếm ngược');
+
+unlimitedState.selectAnswer(1, 'A');
+unlimitedState.toggleFlag(1);
+unlimitedState.goToQuestion(2);
+const restarted = unlimitedState.restartQuiz({ shuffleQuestions: true, shuffleOptions: true });
+assert(restarted === true, 'Có thể đảo đề và làm lại từ đề gốc');
+assert(unlimitedState.currentQuestionIndex === 0, 'Đảo đề làm lại quay về câu đầu tiên');
+assert(Object.keys(unlimitedState.answers).length === 0, 'Đảo đề làm lại xóa đáp án cũ');
+assert(Object.keys(unlimitedState.flagged).length === 0, 'Đảo đề làm lại xóa cờ đã đánh dấu');
+assert(unlimitedState.timeLimit === 0 && unlimitedState.timerInterval === null, 'Đảo đề giữ chế độ không giới hạn');
+
+let restartedAnswersMapped = true;
+unlimitedState.activeQuiz.questions.forEach(shuffledQ => {
+  const originalQ = mockQuizData.questions.find(q => q.id === shuffledQ.id);
+  const shuffledCorrect = shuffledQ.options.find(o => o.key === shuffledQ.correctAnswer);
+  const originalCorrect = originalQ.options.find(o => o.key === originalQ.correctAnswer);
+  if (!shuffledCorrect || shuffledCorrect.text !== originalCorrect.text) {
+    restartedAnswersMapped = false;
+  }
+});
+assert(restartedAnswersMapped, 'Đảo đề làm lại vẫn giữ đúng nội dung đáp án chuẩn');
+
+state.stopTimer();
+stateShuffle.stopTimer();
+unlimitedState.stopTimer();
+
 console.log('\n====================================================');
 console.log(`🎉 KẾT QUẢ TEST: ${passedTests}/${totalTests} KIỂM THỬ THÀNH CÔNG!`);
 console.log('====================================================\n');
