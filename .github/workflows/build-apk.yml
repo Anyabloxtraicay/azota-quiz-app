@@ -43,15 +43,30 @@ jobs:
           npx cap add android
           npx cap sync android
 
-      - name: 8. Cấp quyền thực thi cho Gradle
+      - name: 8. Thay icon app bằng icon custom
+        run: |
+          # Cài ImageMagick để resize icon
+          sudo apt-get install -y imagemagick > /dev/null 2>&1
+          # Tạo icon các kích thước cho Android
+          for size_dir in "mdpi 48" "hdpi 72" "xhdpi 96" "xxhdpi 144" "xxxhdpi 192"; do
+            set -- $size_dir
+            dir="android/app/src/main/res/mipmap-$1"
+            mkdir -p "$dir"
+            convert resources/icon.jpg -resize ${2}x${2} "$dir/ic_launcher.png"
+            convert resources/icon.jpg -resize ${2}x${2} "$dir/ic_launcher_round.png"
+            convert resources/icon.jpg -resize ${2}x${2} "$dir/ic_launcher_foreground.png"
+          done
+          echo "✅ Icon app đã được thay thế ở tất cả kích thước!"
+
+      - name: 9. Cấp quyền thực thi cho Gradle
         run: chmod +x android/gradlew
 
-      - name: 9. Biên dịch mã nguồn thành file APK (Debug)
+      - name: 10. Biên dịch mã nguồn thành file APK (Debug)
         run: |
           cd android
           ./gradlew assembleDebug --stacktrace
 
-      - name: 10. Tải file APK lên GitHub Artifacts để người dùng tải về
+      - name: 11. Tải file APK lên GitHub Artifacts để người dùng tải về
         uses: actions/upload-artifact@v4
         with:
           name: AzotaQuiz-LiquidGlass-APK
