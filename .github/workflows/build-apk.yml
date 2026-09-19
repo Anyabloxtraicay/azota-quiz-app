@@ -1,0 +1,54 @@
+name: Build Android APK (Azota Quiz)
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch: # Cho phép bấm nút "Run workflow" thủ công trên web GitHub
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 1. Checkout mã nguồn
+        uses: actions/checkout@v4
+
+      - name: 2. Cài đặt Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: 3. Cài đặt Java 17 (JDK)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: 4. Cài đặt Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: 5. Cài đặt Dependencies
+        run: npm install
+
+      - name: 6. Khởi tạo Android Project bằng Capacitor
+        run: |
+          npx cap add android || true
+          npx cap sync android
+
+      - name: 7. Cấp quyền thực thi cho Gradle
+        run: |
+          cd android
+          chmod +x gradlew
+
+      - name: 8. Biên dịch mã nguồn thành file APK (Debug)
+        run: |
+          cd android
+          ./gradlew assembleDebug --stacktrace
+
+      - name: 9. Tải file APK lên GitHub Artifacts để người dùng tải về
+        uses: actions/upload-artifact@v4
+        with:
+          name: AzotaQuiz-LiquidGlass-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 14

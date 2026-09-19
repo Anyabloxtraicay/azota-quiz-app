@@ -1,0 +1,156 @@
+/* ==========================================================================
+   Azota Quiz Master - Liquid Glass Design System
+   Theo quy chuẩn DESIGN.md (Hyper-Modern Refractive Translucent Architecture)
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Epilogue:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap');
+
+:root {
+  /* Colors */
+  --primary: #0052FF;
+  --primary-dark: #003EC7;
+  --secondary: #1050D4;
+  --accent-secondary: #4D7CFF;
+  --tertiary: #10B981;
+  --tertiary-container: #007550;
+  --error: #DC2626;
+  --warning: #F59E0B;
+  
+  --surface: #FAF8FF;
+  --surface-low: #F2F3FF;
+  --surface-card: #FFFFFF;
+  --on-surface: #131B2E;
+  --on-surface-variant: #434656;
+  --outline: #737688;
+  --outline-variant: #C3C5D9;
+
+  /* Typography */
+  --font-display: 'Epilogue', system-ui, sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+/* Base Reset & Mobile Optimizations */
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: var(--surface);
+  color: var(--on-surface);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior: none;
+}
+
+/* Mobile Safe Areas */
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Hide Scrollbar for clean mobile experience */
+.no-scrollbar::-webkit-scrollbar,
+::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ==========================================================================
+   Liquid Glass Levels (Khúc Xạ Ánh Sáng & Hiệu Ứng Kính Mờ)
+   ========================================================================== */
+
+/* Level 1: Solid Content Cards */
+.glass-card {
+  background: #FFFFFF;
+  border: 1px solid rgba(19, 27, 46, 0.04);
+  box-shadow: 0 20px 40px -12px rgba(15, 23, 42, 0.08);
+}
+
+/* Level 2: Liquid Glass Floating Bars & Header */
+.liquid-glass-bar {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border-top: 1px solid rgba(255, 255, 255, 0.80);
+  border-bottom: 1px solid rgba(19, 27, 46, 0.04);
+  box-shadow: 0 8px 32px rgba(15, 23, 42, 0.06);
+}
+
+/* Level 3: Modal Overlays & Critical Alerts */
+.liquid-glass-modal {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(28px) saturate(160%);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.80);
+}
+
+/* Specular Rim Effect */
+.specular-rim {
+  box-shadow: inset 0 1.5px 0 0 rgba(255, 255, 255, 0.75),
+              inset 0 -1px 0 0 rgba(19, 27, 46, 0.03);
+}
+
+/* Continuous Squircle Curves */
+.squircle-28 {
+  border-radius: 28px;
+}
+.squircle-24 {
+  border-radius: 24px;
+}
+.squircle-20 {
+  border-radius: 20px;
+}
+.squircle-16 {
+  border-radius: 16px;
+}
+
+/* Option Tile Spring Physics */
+.option-tile {
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
+              border-color 0.15s ease,
+              background-color 0.15s ease,
+              box-shadow 0.18s ease;
+}
+
+.option-tile:active {
+  transform: scale(0.98);
+}
+
+/* Primary Button Glass Gradient */
+.btn-primary-gradient {
+  background: linear-gradient(135deg, #0052FF 0%, #1050D4 100%);
+  box-shadow: 0 10px 24px -4px rgba(0, 82, 255, 0.35),
+              inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn-primary-gradient:active {
+  transform: scale(0.98);
+  box-shadow: 0 4px 12px rgba(0, 82, 255, 0.25);
+}
+
+/* Pulse animation */
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.05); }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s infinite ease-in-out;
+}
