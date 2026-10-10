@@ -1,6 +1,6 @@
 {
-  "version": "1.0.4",
-  "versionCode": 5,
-  "releaseName": "Hotfix Nộp bài + Kho đề + màu đúng/sai",
-  "releaseNotes": "🐛 Hotfix v1.0.4\n• Sửa nút Nộp bài (Làm tiếp / Nộp luôn) không bấm được\n• Sửa overlay xám loang cả màn hình\n• Sửa nút Kho đề (Làm / Xóa) và Hộp câu sai (Đã thuộc)\n• Đậm lại màu đỏ/xanh khi làm đúng/sai (trước mờ quá)\n• Giữ nguyên Xanh SM Liquid Glass v1.0.3"
+  "version": "1.0.5",
+  "versionCode": 6,
+  "releaseName": "Sửa nút nộp bài, ma trận, kho đề, tự cập nhật",
+  "releaseNotes": "v1.0.5\n• Sửa nút Nộp bài và nút danh sách câu\n• Sửa Kho đề / Hộp câu sai\n• Đậm lại màu đúng/sai\n• App tự báo bản mới khi mở"
 }

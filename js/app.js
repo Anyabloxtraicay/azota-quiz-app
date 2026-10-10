@@ -86,6 +86,15 @@ class App{
   document.getElementById('btn-note-backdrop')?.addEventListener('click',()=>this.closeNoteModal());
   document.getElementById('btn-cancel-note')?.addEventListener('click',()=>this.closeNoteModal());
   document.getElementById('btn-save-note')?.addEventListener('click',()=>this.saveNote());
+    document.addEventListener('click', (e) => {
+      const qa = e.target.closest('#btn-quiz-submit'); if (qa) { e.preventDefault(); this.confirmSubmitQuiz(); return; }
+      const qb = e.target.closest('#btn-quiz-matrix-toggle'); if (qb) { e.preventDefault(); this.router.openQuestionMatrix(); return; }
+      const qc = e.target.closest('#btn-question-matrix-close'); if (qc) { e.preventDefault(); this.router.closeQuestionMatrix(); return; }
+      const qd = e.target.closest('#btn-question-matrix-backdrop'); if (qd) { e.preventDefault(); this.router.closeQuestionMatrix(); return; }
+      const me = e.target.closest('#btn-modal-cancel-submit'); if (me) { e.preventDefault(); this.closeConfirmSubmit(); return; }
+      const mf = e.target.closest('#btn-modal-confirm-submit'); if (mf) { e.preventDefault(); this.closeConfirmSubmit(); this.submitQuiz(); return; }
+      const mg = e.target.closest('#btn-modal-backdrop'); if (mg) { e.preventDefault(); this.closeConfirmSubmit(); return; }
+    });
   this.setupKeyboardShortcuts();
  }
  filterHome(keyword){
@@ -123,16 +132,7 @@ class App{
  setMode(m){this.selectedMode=m; const p=document.getElementById('mode-practice'), e=document.getElementById('mode-exam'); if(m==='practice'){p.classList.add('ring-2','ring-[#00C2CC]'); e.classList.remove('ring-2','ring-[#00C2CC]')}else{e.classList.add('ring-2','ring-[#00C2CC]'); p.classList.remove('ring-2','ring-[#00C2CC]')}}
  toggleSwitchUI(btn){const off=btn.getAttribute('data-state')==='off', thumb=btn.firstElementChild; if(off){btn.setAttribute('data-state','on');btn.classList.remove('bg-[#E2E8F0]');btn.classList.add('bg-[#00C2CC]');thumb.classList.remove('translate-x-0');thumb.classList.add('translate-x-5');return true}else{btn.setAttribute('data-state','off');btn.classList.remove('bg-[#00C2CC]');btn.classList.add('bg-[#E2E8F0]');thumb.classList.remove('translate-x-5');thumb.classList.add('translate-x-0');return false}}
  updateReadyBanner(){const b=document.getElementById('ready-quiz-banner'), t=document.getElementById('ready-quiz-title'), c=document.getElementById('ready-quiz-count'); if(b&&this.loadedQuizData){b.classList.remove('hidden'); if(t) t.textContent=this.loadedQuizData.title; if(c) c.textContent=`${this.loadedQuizData.totalQuestions} câu đã sẵn sàng`}}
-     document.addEventListener('click', (e) => {
-      const qa = e.target.closest('#btn-quiz-submit'); if (qa) { e.preventDefault(); this.confirmSubmitQuiz(); return; }
-      const qb = e.target.closest('#btn-quiz-matrix-toggle'); if (qb) { e.preventDefault(); this.router.openQuestionMatrix(); return; }
-      const qc = e.target.closest('#btn-question-matrix-close'); if (qc) { e.preventDefault(); this.router.closeQuestionMatrix(); return; }
-      const qd = e.target.closest('#btn-question-matrix-backdrop'); if (qd) { e.preventDefault(); this.router.closeQuestionMatrix(); return; }
-      const me = e.target.closest('#btn-modal-cancel-submit'); if (me) { e.preventDefault(); this.closeConfirmSubmit(); return; }
-      const mf = e.target.closest('#btn-modal-confirm-submit'); if (mf) { e.preventDefault(); this.closeConfirmSubmit(); this.submitQuiz(); return; }
-      const mg = e.target.closest('#btn-modal-backdrop'); if (mg) { e.preventDefault(); this.closeConfirmSubmit(); return; }
-    });
-setupKeyboardShortcuts(){window.addEventListener('keydown',e=>{if(this.router.currentView!=='quiz') return; if(e.key==='Escape') this.router.closeQuestionMatrix(); if(['1','2','3','4','a','b','c','d','A','B','C','D'].includes(e.key)){const q=this.state.activeQuiz.questions[this.state.currentQuestionIndex]; if(!q) return; let k=e.key.toUpperCase(); if(k==='1')k='A';if(k==='2')k='B';if(k==='3')k='C';if(k==='4')k='D'; this.state.selectAnswer(q.id,k); this.router.updateQuestionCard(this.state.currentQuestionIndex)}})}
+ setupKeyboardShortcuts(){window.addEventListener('keydown',e=>{if(this.router.currentView!=='quiz') return; if(e.key==='Escape') this.router.closeQuestionMatrix(); if(['1','2','3','4','a','b','c','d','A','B','C','D'].includes(e.key)){const q=this.state.activeQuiz.questions[this.state.currentQuestionIndex]; if(!q) return; let k=e.key.toUpperCase(); if(k==='1')k='A';if(k==='2')k='B';if(k==='3')k='C';if(k==='4')k='D'; this.state.selectAnswer(q.id,k); this.router.updateQuestionCard(this.state.currentQuestionIndex)}})}
  esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
  showToast(m){let t=document.getElementById('app-toast'); if(!t){t=document.createElement('div');t.id='app-toast';t.className='fixed top-20 inset-x-4 max-w-sm mx-auto z-50 p-3.5 rounded-2xl bg-[#0F2F3E]/90 text-white text-xs font-medium backdrop-blur shadow-xl text-center transition-all opacity-0 pointer-events-none -translate-y-2';document.body.appendChild(t)} t.textContent=m; t.classList.remove('opacity-0','pointer-events-none','-translate-y-2');t.classList.add('opacity-100');setTimeout(()=>{t.classList.add('opacity-0','pointer-events-none','-translate-y-2');t.classList.remove('opacity-100')},2800)}
  showLoading(txt){let l=document.getElementById('app-loader'); if(!l){l=document.createElement('div');l.id='app-loader';l.className='fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4';l.innerHTML=`<div class="p-6 rounded-[24px] bg-white shadow-2xl flex flex-col items-center gap-3 max-w-xs text-center"><div class="w-10 h-10 border-3 border-[#00C2CC] border-t-transparent rounded-full animate-spin"></div><p id="app-loader-text" class="text-sm font-semibold">${txt}</p></div>`;document.body.appendChild(l)}else{document.getElementById('app-loader-text').textContent=txt; l.classList.remove('hidden')}}
