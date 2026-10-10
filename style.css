@@ -1,6 +1,10 @@
 /* Xanh SM Liquid Glass v2 - Azota Quiz Master */
 @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap');
 :root{
+  --tertiary:#10B981;
+  --tertiary-container:#007550;
+  --error:#DC2626;
+
   --sm-cyan:#00C2CC;
   --sm-cyan-2:#00D1D6;
   --sm-teal:#0ABDCB;
@@ -97,3 +101,12 @@ input, textarea, select{font-size:16px}
 /* An toàn notch / Dynamic Island */
 .pt-safe{padding-top:max(8px, env(safe-area-inset-top,0px))}
 
+
+/* Fix pale result colors */
+.border-tertiary{border-color:#10B981!important}
+.border-error{border-color:#DC2626!important}
+.bg-tertiary{background:#10B981!important}
+.bg-error{background:#DC2626!important}
+.text-tertiary{color:#007550!important}
+.text-error{color:#DC2626!important}
+.option-tile{border-width:2px}

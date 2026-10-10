@@ -48,8 +48,6 @@ class UIRouter {
     this.matrixSummary = document.getElementById('question-matrix-summary');
     this.matrixToggle = document.getElementById('btn-quiz-matrix-toggle');
     this.questionObserver = null;
-    this._libraryCache = [];
-    this._mistakesCache = [];
     this.persistScrollPositionTimer = null;
   }
 
@@ -95,21 +93,19 @@ class UIRouter {
     this.tabMistakes.classList.add('hidden');
 
     // Cập nhật trạng thái active trên Bottom Nav
-    // Xanh SM dock active
     this.navItems.forEach(item => {
       const target = item.getAttribute('data-tab');
-      const isActive = target === tabName;
-      item.classList.toggle('active', isActive);
-      // compat: keep old classes for legacy, but dock uses .active
-      if (isActive) {
+      if (target === tabName) {
         item.classList.add('text-primary-container', 'font-semibold');
         item.classList.remove('text-on-surface-variant');
+        const icon = item.querySelector('.material-symbols-outlined');
+        if (icon) icon.style.fontVariationSettings = "'FILL' 1";
       } else {
         item.classList.remove('text-primary-container', 'font-semibold');
         item.classList.add('text-on-surface-variant');
+        const icon = item.querySelector('.material-symbols-outlined');
+        if (icon) icon.style.fontVariationSettings = "'FILL' 0";
       }
-      const icon = item.querySelector('.material-symbols-outlined');
-      if (icon) icon.style.fontVariationSettings = isActive ? "'FILL' 1" : "'FILL' 0";
     });
 
     if (tabName === 'study') {
@@ -217,7 +213,6 @@ class UIRouter {
     const hasAnswer = !!answer;
     const hasCorrectAnswer = !!question.correctAnswer;
     const isFlagged = !!this.state.flagged[question.id];
-    const note = (window.quizApp && window.quizApp.notes && window.quizApp.notes[String(question.id)]) || null;
     const displayNumber = question.displayNumber || question.number || (index + 1);
 
     const optionsHtml = (question.options || []).map(option => {
@@ -330,7 +325,6 @@ class UIRouter {
       const isCurrent = index === this.state.currentQuestionIndex;
       const isAnswered = !!this.state.answers[question.id];
       const isFlagged = !!this.state.flagged[question.id];
-    const note = (window.quizApp && window.quizApp.notes && window.quizApp.notes[String(question.id)]) || null;
       const displayNumber = question.displayNumber || question.number || (index + 1);
       let buttonClass = 'relative h-11 rounded-xl font-mono-metric text-sm font-semibold flex items-center justify-center transition-all active:scale-95 ';
 
@@ -403,8 +397,6 @@ class UIRouter {
   disconnectQuestionObserver() {
     if (this.questionObserver) this.questionObserver.disconnect();
     this.questionObserver = null;
-    this._libraryCache = [];
-    this._mistakesCache = [];
     clearTimeout(this.persistScrollPositionTimer);
   }
 
@@ -550,8 +542,6 @@ class UIRouter {
   // RENDER TAB KHO ĐỀ CỦA TÔI (LIBRARY TAB)
   // =========================================================================
 
-  filterLibrary(keyword){ const kw=(keyword||'').toLowerCase().trim(); const list=document.getElementById('library-quiz-list'); if(!list) return; if(!kw){ this.renderLibraryList(this._libraryCache); return;} const filtered=this._libraryCache.filter(q=> (q.title||'').toLowerCase().includes(kw)); this.renderLibraryList(filtered); }
-  filterMistakes(keyword, notesMap){ const kw=(keyword||'').toLowerCase().trim(); const list=document.getElementById('mistakes-list'); if(!list) return; if(!kw){ this.renderMistakesList(this._mistakesCache, notesMap); return;} const filtered=this._mistakesCache.filter(m=> ((m.text||m.questionText||'')+' '+(m.tag||'')+' '+((notesMap&&notesMap[m.id]&&notesMap[m.id].tag)||'')+' '+((notesMap&&notesMap[m.id]&&notesMap[m.id].text)||'')).toLowerCase().includes(kw)); this.renderMistakesList(filtered, notesMap); }
   async loadLibraryTab() {
     const listEl = document.getElementById('library-quiz-list');
     if (!listEl) return;
@@ -563,7 +553,7 @@ class UIRouter {
       </div>
     `;
 
-    const quizzes = await this.db.getAllQuizzes(); this._libraryCache = quizzes;
+    const quizzes = await this.db.getAllQuizzes();
     if (quizzes.length === 0) {
       listEl.innerHTML = `
         <div class="p-10 text-center text-on-surface-variant rounded-2xl bg-surface-container-low flex flex-col items-center">
@@ -624,7 +614,7 @@ class UIRouter {
     const practiceBtn = document.getElementById('btn-practice-mistakes');
     if (!listEl) return;
 
-    const mistakes = await this.db.getAllMistakes(); this._mistakesCache = mistakes;
+    const mistakes = await this.db.getAllMistakes();
 
     if (headerEl) headerEl.textContent = `(${mistakes.length} câu)`;
     if (practiceBtn) {
