@@ -1,6 +1,6 @@
 {
-  "version": "1.0.2",
-  "versionCode": 3,
-  "releaseName": "Sửa giao diện toàn màn hình",
-  "releaseNotes": "🐛 Cập nhật Azota Quiz Master v1.0.2\n• APK hiển thị tràn toàn bộ chiều ngang điện thoại\n• Làm bài theo dạng cuộn dọc liên tục, không phải bấm từng câu\n• Bảng số câu chuyển thành popup mở/tắt, hỗ trợ đề 100-200 câu\n• Giữ 90 phút, không giới hạn và đảo đề"
+  "version": "1.0.3",
+  "versionCode": 4,
+  "releaseName": "Xanh SM Liquid Glass — ghi chú, dán đề, tìm kiếm",
+  "releaseNotes": "✨ Azota Quiz Master v1.0.3 — Xanh SM Liquid Glass\n• Giao diện mới: search pill, duo card kính mờ, dock pill nhỏ gọn (teal #00C2CC)\n• Xóa banner slogan, icon đổi sang Material Symbols nhẹ\n• Thêm: Dán văn bản đề (paste), Lịch sử modal, Confirm nộp bài\n• Thêm: Ghi chú + tag từng câu, lưu local, filter theo tag\n• Thêm: Tìm kiếm đề / câu sai, Hộp câu sai sắp theo số lần sai\n• Responsive: SE 320px xếp dọc, 14 Pro/Max, tablet 560px, fix notch\n• Đồng bộ Web (azota-quiz-netlify) 1:1 với App"
 }
