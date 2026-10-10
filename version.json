@@ -1,6 +1,6 @@
 {
-  "version": "1.0.5",
-  "versionCode": 6,
-  "releaseName": "Sửa nút nộp bài, ma trận, kho đề, tự cập nhật",
-  "releaseNotes": "v1.0.5\n• Sửa nút Nộp bài và nút danh sách câu\n• Sửa Kho đề / Hộp câu sai\n• Đậm lại màu đúng/sai\n• App tự báo bản mới khi mở"
+  "version": "1.0.6",
+  "versionCode": 7,
+  "releaseName": "Trả giao diện cũ, giữ chức năng mới",
+  "releaseNotes": "v1.0.6\n• Trả về giao diện trước khi đổi Xanh SM\n• Giữ dán đề, lịch sử, ghi chú và tìm trong kho đề / hộp câu sai\n• Nút nộp bài và danh sách câu dùng lại cách cũ"
 }

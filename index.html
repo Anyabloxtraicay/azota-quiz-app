@@ -3,260 +3,666 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <meta name="theme-color" content="#00C2CC">
-  <title>Azota Quiz Master — Xanh SM Liquid Glass</title>
-  <meta name="description" content="Biến file Word thành trắc nghiệm kính mờ Xanh SM. Up .docx hoặc dán đề, làm bài, ghi chú, ôn câu sai.">
-  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <meta name="theme-color" content="#FAF8FF">
+  <title>Azota Quiz Master - Liquid Glass Learning App</title>
+  <meta name="description" content="Nền tảng làm bài thi trắc nghiệm thông minh từ file Word (.docx) với giao diện Liquid Glass di động.">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Epilogue:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <script>tailwind.config={theme:{extend:{colors:{smCyan:'#00C2CC',smTeal:'#0ABDCB',smDeep:'#0B3A4A',smNavy:'#0F2F3E',surface:'#F2F7F8'},fontFamily:{display:['Be Vietnam Pro','Inter','sans-serif'],body:['Inter','sans-serif'],mono:['JetBrains Mono','monospace']}}}}</script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#003ec7",
+            "primary-container": "#0052ff",
+            "secondary": "#1050d4",
+            "secondary-container": "#396bee",
+            "tertiary": "#007550",
+            "tertiary-container": "#10B981",
+            "on-tertiary-container": "#ffffff",
+            "surface": "#faf8ff",
+            "surface-dim": "#d2d9f4",
+            "surface-bright": "#faf8ff",
+            "surface-container-lowest": "#ffffff",
+            "surface-container-low": "#f2f3ff",
+            "surface-container": "#eaedff",
+            "surface-container-high": "#e2e7ff",
+            "surface-container-highest": "#dae2fd",
+            "on-surface": "#131b2e",
+            "on-surface-variant": "#434656",
+            "outline": "#737688",
+            "outline-variant": "#c3c5d9",
+            "error": "#ba1a1a",
+            "error-container": "#ffdad6",
+            "on-primary": "#ffffff"
+          },
+          fontFamily: {
+            "display": ["Epilogue", "sans-serif"],
+            "body": ["Inter", "sans-serif"],
+            "mono-metric": ["JetBrains Mono", "monospace"]
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- External Libraries (Local First for 100% Offline Resilience) -->
   <script src="lib/mammoth.browser.min.js"></script>
   <script src="lib/confetti.browser.min.js"></script>
-  <script>if(!window.mammoth)document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"><\/script>');if(!window.confetti)document.write('<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"><\/script>');</script>
+  <script>
+    if (!window.mammoth) {
+      document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"><\/script>');
+    }
+    if (!window.confetti) {
+      document.write('<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"><\/script>');
+    }
+  </script>
+
+  <!-- Custom Liquid Glass Stylesheet -->
   <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-[#F2F7F8] text-[#0F2F3E] font-body">
-<div id="app-container" class="w-full min-h-screen flex flex-col relative overflow-x-hidden pb-[84px] md:max-w-[440px] md:mx-auto md:shadow-2xl">
-  <!-- subtle blobs -->
-  <div class="pointer-events-none fixed inset-0 -z-0 overflow-hidden">
-    <div class="absolute -top-24 -left-20 w-[520px] h-[380px] rounded-full blur-[80px] opacity-[0.14]" style="background:radial-gradient(circle at 50% 50%, #00D1D6, transparent 70%)"></div>
-    <div class="absolute top-24 -right-20 w-[420px] h-[420px] rounded-full blur-[80px] opacity-[0.10]" style="background:radial-gradient(circle at 50% 50%, #0ABDCB, transparent 70%)"></div>
+
+<body class="bg-[#FAF8FF] text-[#131B2E] font-body flex justify-center min-h-screen">
+
+  <!-- App fills every phone screen; the desktop preview is capped separately. -->
+  <div id="app-container" class="w-full min-h-screen bg-[#FAF8FF] flex flex-col relative shadow-none md:max-w-md md:shadow-2xl overflow-x-hidden pb-safe">
+
+    <!-- Resume Session Banner (Hiển thị khi phát hiện bài thi chưa hoàn thành) -->
+    <div id="resume-session-banner" class="hidden sticky top-0 z-50 p-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex items-start justify-between gap-2 shadow-lg">
+      <div class="flex items-start gap-2 text-xs font-medium min-w-0 pr-1">
+        <span class="material-symbols-outlined text-[18px] animate-pulse">restore</span>
+        <span class="text-wrap-safe leading-snug">Bạn có bài thi đang làm dở. Tiếp tục?</span>
+      </div>
+      <div class="flex items-center gap-1.5 shrink-0">
+        <button id="btn-resume-session" class="px-2.5 py-1 rounded-lg bg-white text-blue-600 font-semibold text-xs shadow-sm active:scale-95 transition-transform">
+          Làm tiếp
+        </button>
+        <button id="btn-discard-session" class="p-1 rounded-lg text-white/80 hover:text-white" title="Bỏ qua">
+          <span class="material-symbols-outlined text-[16px]">close</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ======================================================================= -->
+    <!-- 1. VIEW HOME (Trang Chủ & Cấu Hình Đề Thi)                              -->
+    <!-- ======================================================================= -->
+    <div id="view-home" class="flex-1 flex flex-col">
+      
+      <!-- Top Brand Header -->
+      <header class="w-full bg-white/80 backdrop-blur-2xl border-b border-outline-variant/30 sticky top-0 z-40 pt-safe">
+        <div class="min-h-16 px-4 py-2 flex items-center justify-between gap-3">
+          <div class="flex min-w-0 items-center gap-2.5">
+            <div class="w-9 h-9 rounded-2xl bg-gradient-to-br from-primary-container to-secondary flex items-center justify-center text-white font-bold text-lg shadow-md shadow-primary-container/20">
+              A
+            </div>
+            <div class="min-w-0 whitespace-nowrap">
+              <span class="font-display font-extrabold text-[17px] tracking-tight text-on-surface">Azota</span>
+              <span class="font-display font-semibold text-[17px] text-primary-container">Quiz</span>
+            </div>
+          </div>
+
+          <div class="flex shrink-0 items-center gap-2">
+            <button id="btn-sample-quiz" type="button" class="text-xs font-semibold px-3 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-primary flex items-center gap-1 transition-all active:scale-95 shadow-sm">
+              <span class="material-symbols-outlined text-[16px]">bolt</span>
+              <span>Đề mẫu</span>
+            </button>
+            <button id="btn-open-paste" type="button" class="text-xs font-semibold px-3 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-primary flex items-center gap-1 transition-all active:scale-95 shadow-sm">
+              <span class="material-symbols-outlined text-[16px]">content_paste</span>
+              <span>Dán đề</span>
+            </button>
+            <button id="btn-open-history" type="button" class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant" title="Lịch sử">
+              <span class="material-symbols-outlined text-[18px]">history</span>
+            </button>
+            <div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant font-semibold text-xs">
+              <span class="material-symbols-outlined text-[18px]">person</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- TAB 1: HỌC & LÀM ĐỀ -->
+      <section id="tab-study" class="flex-1 flex flex-col p-4 pb-24 space-y-4">
+        
+        <!-- Hero Text -->
+        <div class="text-center pt-2 pb-1">
+          <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-container/10 text-primary font-caption text-xs font-semibold mb-2">
+            <span class="w-2 h-2 rounded-full bg-primary-container animate-pulse"></span>
+            LIQUID GLASS QUIZ ENGINE
+          </div>
+          <h1 class="font-display font-extrabold text-2xl text-on-surface leading-tight">
+            Biến Đề Thi Word Thành <br>
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary-container to-secondary">Bài Trắc Nghiệm Di Động</span>
+          </h1>
+        </div>
+
+        <!-- Banner khi đề thi đã sẵn sàng -->
+        <div id="ready-quiz-banner" class="hidden p-4 rounded-2xl bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/30 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-md">
+              <span class="material-symbols-outlined text-[22px]">check</span>
+            </div>
+            <div class="min-w-0 text-wrap-safe">
+              <p id="ready-quiz-title" class="font-semibold text-sm text-slate-900 text-wrap-safe">Đề thi đã sẵn sàng</p>
+              <p id="ready-quiz-count" class="text-xs text-emerald-700 font-medium">0 câu hỏi</p>
+            </div>
+          </div>
+          <span class="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold shrink-0">SẴN SÀNG</span>
+        </div>
+
+        <!-- File Upload Card -->
+        <div class="rounded-[24px] bg-white p-5 border border-outline-variant/30 shadow-[0_10px_30px_-10px_rgba(19,27,46,0.06)]">
+          <!-- Hidden Input -->
+          <input type="file" id="file-input" accept=".docx" class="hidden">
+
+          <!-- Dropzone -->
+          <div id="dropzone" class="border-2 border-dashed border-outline-variant/60 rounded-[20px] p-6 text-center cursor-pointer hover:border-primary-container hover:bg-blue-50/30 transition-all flex flex-col items-center">
+            <div class="w-12 h-12 rounded-2xl bg-blue-50 text-primary-container flex items-center justify-center mb-2.5">
+              <span class="material-symbols-outlined text-[28px]">upload_file</span>
+            </div>
+            <h3 class="font-title text-sm font-semibold text-on-surface mb-0.5">Tải lên file Word (.docx)</h3>
+            <p class="text-xs text-on-surface-variant mb-3">Kéo thả file vào đây hoặc bấm để chọn</p>
+            <button id="btn-browse-file" type="button" class="px-4 py-2 rounded-xl bg-surface-container-high text-primary font-semibold text-xs hover:bg-primary-container hover:text-white transition-colors">
+              Chọn File Từ Máy
+            </button>
+          </div>
+        </div>
+
+        <!-- Mode Selection Cards -->
+        <div class="space-y-2">
+          <label class="font-caption text-xs font-semibold text-on-surface-variant tracking-wider uppercase">Chế Độ Làm Bài</label>
+          <div class="grid grid-cols-2 gap-2.5">
+            <!-- Mode: Luyện Tập -->
+            <div id="mode-practice" class="p-3.5 rounded-[20px] bg-white border border-outline-variant/30 ring-2 ring-primary-container shadow-[0_8px_24px_rgba(0,82,255,0.08)] cursor-pointer transition-all flex flex-col justify-between">
+              <div class="flex items-start justify-between mb-2">
+                <span class="material-symbols-outlined text-primary-container text-[24px]">school</span>
+                <div class="mode-radio-icon w-5 h-5 rounded-full bg-primary-container flex items-center justify-center text-on-primary shrink-0 mt-0.5">
+                  <span class="material-symbols-outlined text-[14px]">check</span>
+                </div>
+              </div>
+              <div>
+                <h4 class="font-title text-[14px] font-bold text-on-surface">Luyện Tập</h4>
+                <p class="text-[11px] text-on-surface-variant leading-tight mt-0.5">Xem đáp án & giải thích ngay sau mỗi câu</p>
+              </div>
+            </div>
+
+            <!-- Mode: Thi Thử -->
+            <div id="mode-exam" class="p-3.5 rounded-[20px] bg-white border border-outline-variant/30 cursor-pointer transition-all flex flex-col justify-between">
+              <div class="flex items-start justify-between mb-2">
+                <span class="material-symbols-outlined text-secondary text-[24px]">timer</span>
+                <div class="mode-radio-icon w-5 h-5 rounded-full bg-surface-container flex items-center justify-center text-transparent shrink-0 mt-0.5">
+                  <span class="material-symbols-outlined text-[14px]">check</span>
+                </div>
+              </div>
+              <div>
+                <h4 class="font-title text-[14px] font-bold text-on-surface">Thi Thử</h4>
+                <p class="text-[11px] text-on-surface-variant leading-tight mt-0.5">Phòng thi bấm giờ, nộp bài mới biết kết quả</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Timer & Quiz Options -->
+        <div class="rounded-[24px] bg-white p-4 border border-outline-variant/30 space-y-3.5 shadow-sm">
+          <!-- Timer pills -->
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-semibold text-on-surface-variant">Thời Gian Làm Bài</span>
+              <span class="font-mono-metric text-xs font-semibold text-primary">Phút</span>
+            </div>
+            <div class="grid grid-cols-3 gap-2 bg-surface-container-low p-1 rounded-2xl">
+              <button type="button" data-minutes="15" class="time-pill py-2 text-center rounded-xl font-caption text-xs text-on-surface-variant font-medium transition-all">15p</button>
+              <button type="button" data-minutes="30" class="time-pill py-2 text-center rounded-xl bg-surface-container-lowest text-primary-container font-caption text-xs font-semibold shadow-sm transition-all">30p</button>
+              <button type="button" data-minutes="45" class="time-pill py-2 text-center rounded-xl font-caption text-xs text-on-surface-variant font-medium transition-all">45p</button>
+              <button type="button" data-minutes="60" class="time-pill py-2 text-center rounded-xl font-caption text-xs text-on-surface-variant font-medium transition-all">60p</button>
+              <button type="button" data-minutes="90" class="time-pill py-2 text-center rounded-xl font-caption text-xs text-on-surface-variant font-medium transition-all">90p</button>
+              <button type="button" data-minutes="0" title="Không giới hạn thời gian" aria-label="Không giới hạn thời gian" class="time-pill py-2 text-center rounded-xl font-caption text-xs text-on-surface-variant font-medium transition-all">∞</button>
+            </div>
+          </div>
+
+          <!-- Switches -->
+          <div class="pt-2 border-t border-outline-variant/20 space-y-2.5">
+            <!-- Switch: Đảo câu hỏi -->
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="flex flex-col">
+                <span class="text-xs font-semibold text-on-surface">Đảo thứ tự câu hỏi</span>
+                <span class="text-[10px] text-outline">Xáo trộn vị trí câu ngẫu nhiên</span>
+              </div>
+              <button id="switch-shuffle-questions" type="button" data-state="off" class="w-11 h-6 shrink-0 rounded-full bg-surface-container-highest p-0.5 transition-colors relative">
+                <div class="w-5 h-5 rounded-full bg-white shadow-md transform translate-x-0 transition-transform"></div>
+              </button>
+            </div>
+
+            <!-- Switch: Đảo đáp án -->
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="flex flex-col">
+                <span class="text-xs font-semibold text-on-surface">Đảo thứ tự đáp án</span>
+                <span class="text-[10px] text-outline">Xáo trộn các lựa chọn A, B, C, D</span>
+              </div>
+              <button id="switch-shuffle-options" type="button" data-state="off" class="w-11 h-6 shrink-0 rounded-full bg-surface-container-highest p-0.5 transition-colors relative">
+                <div class="w-5 h-5 rounded-full bg-white shadow-md transform translate-x-0 transition-transform"></div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Primary CTA Button -->
+        <button id="btn-start-quiz" type="button" class="btn-primary-gradient w-full h-[54px] rounded-[20px] text-white font-title text-[15px] font-bold flex items-center justify-center gap-2 shadow-lg active:scale-[0.98] transition-transform">
+          <span>Bắt Đầu Làm Bài</span>
+          <span class="material-symbols-outlined text-[20px]">arrow_forward</span>
+        </button>
+
+        <!-- Parser Notice Box -->
+        <div class="p-3.5 rounded-2xl bg-surface-container text-on-surface-variant flex items-start gap-2 text-[11px] leading-relaxed">
+          <span class="material-symbols-outlined text-primary-container text-[18px] shrink-0 mt-0.5">info</span>
+          <div>
+            <strong class="font-semibold text-on-surface">Cơ chế Parser tự động:</strong> Tự động nhận diện Bảng đáp án cuối &gt; Dòng "Đáp án: X" &gt; Ký tự in đậm/gạch chân.
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: KHO ĐỀ CỦA TÔI -->
+      <section id="tab-library" class="hidden flex-1 flex flex-col p-4 pb-24 space-y-3">
+        <div class="mb-2">
+          <h2 class="font-display font-bold text-xl text-on-surface">Kho Đề Của Tôi</h2>
+          <p class="text-xs text-on-surface-variant">Toàn bộ đề thi đã lưu trữ để ôn tập lại bất kỳ lúc nào</p>
+          <input id="library-search" type="search" placeholder="Tìm đề theo tên" class="mt-2 w-full h-10 rounded-xl border border-outline-variant/40 px-3 text-sm bg-white">
+        </div>
+        <!-- Library List Container -->
+        <div id="library-quiz-list" class="space-y-2.5">
+          <!-- Rendered dynamically by UIRouter -->
+        </div>
+      </section>
+
+      <!-- TAB 3: HỘP CÂU SAI -->
+      <section id="tab-mistakes" class="hidden flex-1 flex flex-col p-4 pb-24 space-y-3">
+        <div class="flex items-center justify-between mb-1">
+          <div>
+            <h2 class="font-display font-bold text-xl text-on-surface flex items-center gap-2">
+              Hộp Câu Sai
+              <span id="mistakes-header-count" class="text-xs font-mono font-bold text-error bg-red-100 px-2 py-0.5 rounded-full">(0)</span>
+            </h2>
+            <p class="text-xs text-on-surface-variant">Luyện tập lại các câu hỏi từng chọn nhầm</p>
+            <input id="mistakes-search" type="search" placeholder="Lọc câu sai theo từ hoặc tag" class="mt-2 w-full h-10 rounded-xl border border-outline-variant/40 px-3 text-sm bg-white">
+          </div>
+        </div>
+
+        <!-- Action Card -->
+        <div class="p-4 rounded-[22px] bg-gradient-to-r from-red-500/10 to-orange-500/10 border border-red-500/20 flex flex-wrap items-center justify-between gap-3">
+          <div class="min-w-0 flex-1">
+            <h4 class="font-semibold text-sm text-slate-900">Ôn Tập Cấp Tốc</h4>
+            <p class="text-xs text-slate-600">Tạo đề thi mới từ danh sách câu sai</p>
+          </div>
+          <button id="btn-practice-mistakes" class="shrink-0 px-4 py-2 rounded-xl bg-error text-white font-semibold text-xs shadow-md active:scale-95 transition-all">
+            Luyện Lại Ngay
+          </button>
+        </div>
+
+        <!-- Mistakes List Container -->
+        <div id="mistakes-list" class="space-y-2.5">
+          <!-- Rendered dynamically by UIRouter -->
+        </div>
+      </section>
+    </div>
+
+    <!-- ======================================================================= -->
+    <!-- 2. VIEW QUIZ (Phòng Thi / Đang Làm Bài)                                 -->
+    <!-- ======================================================================= -->
+    <div id="view-quiz" class="hidden flex-1 flex flex-col relative pb-safe">
+      
+      <!-- Fixed Liquid Glass Header -->
+      <header class="sticky top-0 w-full z-50 liquid-glass-bar pt-safe">
+        <div class="min-h-16 px-4 py-2 flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2 min-w-0">
+            <button id="btn-quiz-back" type="button" aria-label="Quay lại" class="w-10 h-10 -ml-1 rounded-full flex items-center justify-center text-on-surface hover:bg-surface-container transition-colors">
+              <span class="material-symbols-outlined text-[22px]">arrow_back_ios_new</span>
+            </button>
+            <div class="flex flex-col min-w-0">
+              <span id="quiz-header-title" class="font-title text-sm font-bold text-on-surface leading-tight text-wrap-safe">Phòng Thi Trắc Nghiệm</span>
+              <span id="quiz-header-code" class="font-mono-metric text-[11px] text-on-surface-variant">Câu 1 / 10</span>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 shrink-0">
+            <!-- Timer Module -->
+            <div id="quiz-timer-container" class="px-3 py-1 rounded-full bg-surface-container/80 flex items-center gap-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
+              <span class="material-symbols-outlined text-primary-container text-[16px]">timer</span>
+              <span id="quiz-timer-text" class="font-mono-metric text-xs font-semibold text-primary">30:00</span>
+            </div>
+            <button id="btn-quiz-shuffle" type="button" title="Đảo đề và làm lại" aria-label="Đảo đề và làm lại" class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white shadow-sm active:scale-95 transition-transform">
+              <span class="material-symbols-outlined text-[18px]">shuffle</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Slim header progress track -->
+        <div class="w-full h-[3px] bg-surface-container-high relative overflow-hidden">
+          <div id="quiz-header-progress" class="h-full bg-primary-container w-0 rounded-r-full shadow-[0_0_8px_rgba(0,82,255,0.6)] transition-all duration-300"></div>
+        </div>
+      </header>
+
+      <!-- Main Quiz Body: all questions stay in one continuous vertical stream. -->
+      <main class="flex-1 pt-3 pb-24 px-4 space-y-4 min-w-0">
+        <section class="flex flex-col gap-1.5 pt-1">
+          <div class="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 text-xs font-semibold">
+            <div class="flex min-w-0 flex-wrap items-center gap-1.5 text-primary">
+              <span class="w-2 h-2 rounded-full bg-primary-container animate-pulse"></span>
+              <span id="quiz-progress-text">ĐÃ HOÀN THÀNH 0/10 CÂU</span>
+            </div>
+            <span id="quiz-progress-percent" class="font-mono-metric text-primary-container font-bold">0%</span>
+          </div>
+          <div class="w-full h-2 rounded-full bg-surface-container overflow-hidden shadow-[inset_0_1px_2px_rgba(19,27,46,0.06)]">
+            <div id="quiz-progress-bar" class="h-full bg-primary-container rounded-full w-0 shadow-[0_0_10px_rgba(0,82,255,0.7)] transition-all duration-300"></div>
+          </div>
+        </section>
+
+        <section id="quiz-question-stream" class="space-y-5 pb-2" aria-live="polite">
+          <!-- All question cards are rendered dynamically for vertical scrolling. -->
+        </section>
+      </main>
+
+      <!-- Fixed Quiz Toolbar -->
+      <footer class="fixed bottom-0 inset-x-0 w-full md:max-w-md md:mx-auto z-50 liquid-glass-bar pb-safe">
+        <div class="h-16 px-4 flex items-center gap-3">
+          <button id="btn-quiz-matrix-toggle" type="button" title="Mở danh sách câu hỏi" aria-label="Mở danh sách câu hỏi" aria-controls="question-matrix-modal" aria-haspopup="dialog" aria-expanded="false" class="w-12 h-12 rounded-2xl bg-surface-container text-on-surface-variant border border-outline-variant/30 flex items-center justify-center hover:bg-surface-container-high transition-all active:scale-95 shrink-0">
+            <span class="material-symbols-outlined text-[24px]">apps</span>
+          </button>
+          <button id="btn-quiz-submit" type="button" class="flex-1 h-12 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm flex items-center justify-center gap-1.5 shadow-md transition-all active:scale-95">
+            <span class="material-symbols-outlined text-[18px]">task_alt</span>
+            <span>Nộp Bài</span>
+          </button>
+        </div>
+      </footer>
+    </div>
+
+    <!-- Question Matrix Bottom Sheet -->
+    <div id="question-matrix-modal" class="hidden fixed inset-0 z-[90]" aria-hidden="true">
+      <button id="btn-question-matrix-backdrop" type="button" class="absolute inset-0 w-full h-full bg-black/40 backdrop-blur-sm" aria-label="Đóng danh sách câu hỏi"></button>
+      <section class="question-matrix-sheet absolute bottom-0 inset-x-0 w-full md:max-w-md md:mx-auto max-h-[78dvh] bg-surface rounded-t-[28px] shadow-2xl flex flex-col" role="dialog" aria-modal="true" aria-labelledby="question-matrix-title">
+        <div class="flex items-center justify-between gap-3 px-5 pt-4 pb-3 border-b border-outline-variant/30">
+          <div class="min-w-0">
+            <h2 id="question-matrix-title" class="font-display font-bold text-base text-on-surface">Danh sách câu hỏi</h2>
+            <p id="question-matrix-summary" class="text-xs text-on-surface-variant mt-0.5">Đã làm 0/0 câu</p>
+          </div>
+          <button id="btn-question-matrix-close" type="button" title="Đóng" aria-label="Đóng danh sách câu hỏi" class="w-10 h-10 rounded-full bg-surface-container text-on-surface-variant flex items-center justify-center shrink-0 active:scale-95">
+            <span class="material-symbols-outlined text-[22px]">close</span>
+          </button>
+        </div>
+        <div class="px-5 py-3 text-[11px] text-on-surface-variant flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-outline-variant/20">
+          <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-surface-container-highest"></span> Chưa làm</span>
+          <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-primary-container"></span> Đã làm</span>
+          <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-[#f97316]"></span> Đánh dấu</span>
+        </div>
+        <div id="question-matrix-grid" class="grid grid-cols-5 gap-2 overflow-y-auto p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))]">
+          <!-- Dynamic question number buttons -->
+        </div>
+      </section>
+    </div>
+
+    <!-- ======================================================================= -->
+    <!-- 3. VIEW RESULT (Màn Hình Kết Quả & Rà Soát)                              -->
+    <!-- ======================================================================= -->
+    <div id="view-result" class="hidden flex-1 flex flex-col p-4 pb-24 space-y-4">
+      
+      <!-- Top Result Header -->
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-safe">
+        <h2 class="font-display font-extrabold text-xl text-on-surface">Kết Quả Bài Thi</h2>
+        <button id="btn-result-home" type="button" class="text-xs font-semibold text-primary px-3 py-1.5 rounded-full bg-surface-container">
+          Về Trang Chủ
+        </button>
+      </div>
+
+      <!-- HERO SCORE CARD (Liquid Glass Floating Panel) -->
+      <section class="relative w-full rounded-[28px] bg-white/90 backdrop-blur-2xl shadow-[0_20px_48px_-12px_rgba(19,27,46,0.12)] p-6 flex flex-col items-center text-center overflow-hidden border border-outline-variant/30">
+        <!-- Ambient decorative blurs -->
+        <div class="absolute -top-20 -left-16 w-44 h-44 rounded-full bg-blue-300 blur-3xl opacity-40 pointer-events-none"></div>
+        <div class="absolute -bottom-20 -right-16 w-44 h-44 rounded-full bg-emerald-300 blur-3xl opacity-30 pointer-events-none"></div>
+
+        <!-- Header pill -->
+        <div class="inline-flex max-w-full flex-wrap items-center justify-center gap-x-1.5 gap-y-0.5 px-3 py-1 rounded-full bg-surface-container/80 backdrop-blur-md mb-2">
+          <span class="w-2 h-2 rounded-full bg-primary-container animate-pulse"></span>
+          <span class="text-[11px] text-on-surface-variant font-semibold uppercase tracking-wider">TỔNG KẾT ĐIỂM SỐ</span>
+          <span class="text-outline">|</span>
+          <span id="result-test-code" class="font-mono-metric text-[11px] text-primary font-bold">AZT-2026</span>
+        </div>
+
+        <!-- Score representation -->
+        <div class="relative flex items-baseline justify-center my-1">
+          <span id="result-score-value" class="font-display font-extrabold text-5xl tracking-tighter text-primary drop-shadow-[0_4px_16px_rgba(0,82,255,0.2)]">8.5</span>
+          <span class="font-title text-base text-on-surface-variant font-semibold ml-1">/ 10</span>
+        </div>
+
+        <!-- Rating Badge -->
+        <div id="result-rating-badge" class="w-full mt-2 p-2.5 rounded-2xl bg-gradient-to-r from-surface-container via-surface-container-low to-surface-container flex flex-wrap items-center justify-center gap-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
+          <span class="material-symbols-outlined text-tertiary text-[20px]" style="font-variation-settings: 'FILL' 1;">emoji_events</span>
+          <span class="text-xs font-semibold text-on-surface">Xuất sắc! Bạn đã làm rất tốt</span>
+        </div>
+
+        <!-- Ribbon -->
+        <div class="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 mt-4 pt-1 text-on-surface-variant text-xs">
+          <div class="flex items-center gap-1">
+            <span class="material-symbols-outlined text-[15px] text-primary">schedule</span>
+            <span id="result-date-text">16:45 • Hôm nay</span>
+          </div>
+          <span class="text-outline-variant">•</span>
+          <div class="flex items-center gap-1">
+            <span class="material-symbols-outlined text-[15px] text-tertiary">check_circle</span>
+            <span id="result-completion-text">Hoàn thành 10/10 câu</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4 Compact Performance Tiles (2x2 Grid) -->
+      <section class="grid grid-cols-2 gap-2.5">
+        <!-- Correct Tile -->
+        <div class="p-3.5 rounded-2xl bg-white border border-outline-variant/30 shadow-sm flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
+            <span class="material-symbols-outlined text-[22px]">check_circle</span>
+          </div>
+          <div class="flex flex-col min-w-0">
+            <span id="result-tile-correct" class="font-mono-metric text-lg font-bold text-emerald-600 leading-tight">08</span>
+            <span class="text-[11px] text-on-surface-variant">Câu đúng</span>
+          </div>
+        </div>
+
+        <!-- Wrong Tile -->
+        <div class="p-3.5 rounded-2xl bg-white border border-outline-variant/30 shadow-sm flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-red-500/10 text-error flex items-center justify-center shrink-0">
+            <span class="material-symbols-outlined text-[22px]">cancel</span>
+          </div>
+          <div class="flex flex-col min-w-0">
+            <span id="result-tile-wrong" class="font-mono-metric text-lg font-bold text-error leading-tight">02</span>
+            <span class="text-[11px] text-on-surface-variant">Câu sai</span>
+          </div>
+        </div>
+
+        <!-- Skipped Tile -->
+        <div class="p-3.5 rounded-2xl bg-white border border-outline-variant/30 shadow-sm flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-slate-100 text-outline flex items-center justify-center shrink-0">
+            <span class="material-symbols-outlined text-[22px]">remove_circle_outline</span>
+          </div>
+          <div class="flex flex-col min-w-0">
+            <span id="result-tile-skipped" class="font-mono-metric text-lg font-bold text-outline leading-tight">00</span>
+            <span class="text-[11px] text-on-surface-variant">Bỏ qua</span>
+          </div>
+        </div>
+
+        <!-- Time Taken Tile -->
+        <div class="p-3.5 rounded-2xl bg-white border border-outline-variant/30 shadow-sm flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-blue-500/10 text-primary-container flex items-center justify-center shrink-0">
+            <span class="material-symbols-outlined text-[22px]">timer</span>
+          </div>
+          <div class="flex flex-col min-w-0">
+            <span id="result-tile-time" class="font-mono-metric text-lg font-bold text-primary-container leading-tight">12:35</span>
+            <span class="text-[11px] text-on-surface-variant">Thời gian</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Action Buttons (Làm lại đề) -->
+      <div class="grid grid-cols-2 gap-2.5">
+        <button id="btn-result-retake" type="button" class="min-w-0 min-h-[48px] rounded-2xl bg-primary-container text-white font-semibold text-xs flex items-center justify-center gap-1.5 px-2 shadow-md active:scale-95 transition-all">
+          <span class="material-symbols-outlined text-[18px]">replay</span>
+          <span>Làm Lại Đề Này</span>
+        </button>
+        <button id="btn-result-shuffle-retake" type="button" title="Đảo đề và làm lại" class="min-w-0 min-h-[48px] rounded-2xl bg-surface-container text-primary-container border border-outline-variant/30 font-semibold text-xs flex items-center justify-center gap-1.5 px-2 active:scale-95 transition-all">
+          <span class="material-symbols-outlined text-[18px]">shuffle</span>
+          <span>Đảo Đề</span>
+        </button>
+      </div>
+
+      <!-- Review Section with Filters -->
+      <section class="space-y-3 pt-2 min-w-0">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h3 class="font-display font-bold text-base text-on-surface">Rà Soát Chi Tiết</h3>
+          <!-- Filter Tabs -->
+          <div class="flex flex-wrap items-center gap-1 bg-surface-container-low p-1 rounded-full text-xs">
+            <button id="filter-review-all" type="button" class="px-3.5 py-1.5 rounded-full text-xs font-semibold bg-primary-container text-on-primary shadow-sm transition-all">Tất cả</button>
+            <button id="filter-review-wrong" type="button" class="px-3.5 py-1.5 rounded-full text-xs font-medium bg-surface-container text-on-surface-variant transition-all">Câu sai</button>
+            <button id="filter-review-flagged" type="button" class="px-3.5 py-1.5 rounded-full text-xs font-medium bg-surface-container text-on-surface-variant transition-all">Đã cờ</button>
+          </div>
+        </div>
+
+        <!-- Review Question Cards List -->
+        <div id="result-review-list" class="space-y-3">
+          <!-- Rendered dynamically by UIRouter -->
+        </div>
+      </section>
+    </div>
+
+    <!-- ======================================================================= -->
+    <!-- 4. BOTTOM NAVIGATION (Fixed Liquid Glass Navigation Bar)                -->
+    <!-- ======================================================================= -->
+    <nav id="bottom-nav" class="fixed bottom-0 inset-x-0 w-full md:max-w-md md:mx-auto z-40 liquid-glass-bar pb-safe">
+      <div class="flex justify-around items-center h-16 px-2">
+        <!-- Tab: Học & Làm Đề -->
+        <button type="button" data-tab="study" class="bottom-nav-item flex flex-col items-center justify-center flex-1 min-w-0 h-12 text-primary-container font-semibold transition-transform active:scale-95">
+          <span class="material-symbols-outlined text-[24px]" style="font-variation-settings: 'FILL' 1;">menu_book</span>
+          <span class="text-[11px] mt-0.5">Học &amp; Đề</span>
+        </button>
+
+        <!-- Tab: Kho Đề Của Tôi -->
+        <button type="button" data-tab="library" class="bottom-nav-item flex flex-col items-center justify-center flex-1 min-w-0 h-12 text-on-surface-variant transition-transform active:scale-95">
+          <span class="material-symbols-outlined text-[24px]">folder</span>
+          <span class="text-[11px] mt-0.5">Kho Đề</span>
+        </button>
+
+        <!-- Tab: Hộp Câu Sai -->
+        <button type="button" data-tab="mistakes" class="bottom-nav-item flex flex-col items-center justify-center flex-1 min-w-0 h-12 text-on-surface-variant transition-transform active:scale-95 relative">
+          <div class="relative flex items-center justify-center">
+            <span class="material-symbols-outlined text-[24px]">history_edu</span>
+            <span class="absolute -top-0.5 -right-1 w-2 h-2 rounded-full bg-error ring-2 ring-white"></span>
+          </div>
+          <span class="text-[11px] mt-0.5">Hộp Câu Sai</span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- ======================================================================= -->
+    <!-- 5. MODAL CẬP NHẬT PHIÊN BẢN MỚI (Liquid Glass Update Notification)     -->
+    <!-- ======================================================================= -->
+    <div id="update-modal-overlay" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4 update-modal-overlay overflow-y-auto">
+      <!-- Backdrop mờ -->
+      <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+
+      <!-- Modal Card -->
+      <div id="update-modal" class="update-modal-card relative w-full max-w-sm my-auto rounded-[28px] liquid-glass-modal p-5 sm:p-6 flex flex-col items-center text-center space-y-4 overflow-hidden">
+        <!-- Ambient glows -->
+        <div class="absolute -top-16 -left-12 w-36 h-36 rounded-full bg-blue-400 blur-3xl opacity-30 pointer-events-none"></div>
+        <div class="absolute -bottom-16 -right-12 w-36 h-36 rounded-full bg-emerald-400 blur-3xl opacity-25 pointer-events-none"></div>
+
+        <!-- Icon -->
+        <div class="w-16 h-16 rounded-[22px] bg-gradient-to-br from-primary-container to-secondary flex items-center justify-center shadow-lg shadow-primary-container/30">
+          <span class="material-symbols-outlined text-white text-[32px]" style="font-variation-settings: 'FILL' 1;">system_update</span>
+        </div>
+
+        <!-- Title -->
+        <div>
+          <h3 class="font-display font-extrabold text-lg text-on-surface leading-tight">Đã có bản cập nhật mới!</h3>
+          <div class="flex items-center justify-center gap-2 mt-1.5">
+            <span id="update-version-text" class="px-2.5 py-0.5 rounded-full bg-primary-container/15 text-primary-container font-mono-metric text-xs font-bold">v1.0.1</span>
+            <span class="text-[11px] text-outline">•</span>
+            <span id="update-current-version" class="text-[11px] text-on-surface-variant">Phiên bản hiện tại: v1.0.0</span>
+          </div>
+        </div>
+
+        <!-- Release Notes -->
+        <div class="w-full p-3.5 rounded-2xl bg-surface-container/60 text-left max-h-40 overflow-y-auto">
+          <div class="flex items-center gap-1.5 mb-2">
+            <span class="material-symbols-outlined text-primary text-[16px]">new_releases</span>
+            <span class="text-xs font-bold text-on-surface">Có gì mới?</span>
+          </div>
+          <div id="update-notes-text" class="text-xs text-on-surface-variant leading-relaxed">
+            Cập nhật mới với nhiều cải tiến.
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="w-full flex flex-col gap-2.5">
+          <button id="btn-update-now" type="button" class="btn-primary-gradient w-full h-[50px] rounded-[18px] text-white font-title text-sm font-bold flex items-center justify-center gap-2 shadow-lg active:scale-[0.98] transition-transform">
+            <span class="material-symbols-outlined text-[20px]">download</span>
+            <span>Cập Nhật Ngay</span>
+          </button>
+          <button id="btn-update-later" type="button" class="w-full h-[44px] rounded-[16px] bg-surface-container hover:bg-surface-container-high text-on-surface-variant font-semibold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-[0.98]">
+            <span>Để Sau</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
   </div>
 
-  <!-- sticky top -->
-  <div id="resume-session-banner" class="hidden sticky top-0 z-50 p-3 bg-gradient-to-r from-[#00C2CC] to-[#0ABDCB] text-white flex items-center justify-between gap-2 shadow-lg pt-safe">
-    <div class="flex items-center gap-2 text-xs font-semibold min-w-0"><span class="material-symbols-outlined text-[18px] animate-pulse">restore</span><span class="text-wrap-safe">Bạn có bài đang làm dở. Tiếp tục?</span></div>
-    <div class="flex items-center gap-1.5 shrink-0">
-      <button id="btn-resume-session" class="px-3 py-1.5 rounded-full bg-white text-[#0ABDCB] font-bold text-xs shadow active:scale-95">Làm tiếp</button>
-      <button id="btn-discard-session" class="p-1.5 rounded-full bg-white/20"><span class="material-symbols-outlined text-[16px]">close</span></button>
+
+  <div id="modal-paste" class="hidden fixed inset-0 z-[80] flex items-end justify-center">
+    <button id="btn-paste-backdrop" type="button" class="absolute inset-0 bg-black/40"></button>
+    <div class="relative w-full max-w-md bg-white rounded-t-[24px] p-4 space-y-3">
+      <div class="flex items-center justify-between">
+        <h3 class="font-bold">Dán văn bản đề</h3>
+        <button id="btn-close-paste" type="button" class="w-9 h-9 rounded-full bg-surface-container">Đóng</button>
+      </div>
+      <textarea id="paste-textarea" rows="8" class="w-full rounded-2xl border p-3 text-sm" placeholder="Câu 1: ...&#10;A. ...&#10;B. ...&#10;Đáp án: B"></textarea>
+      <div class="flex gap-2">
+        <button id="btn-cancel-paste" type="button" class="flex-1 h-11 rounded-xl bg-surface-container font-semibold">Hủy</button>
+        <button id="btn-confirm-paste" type="button" class="flex-1 h-11 rounded-xl bg-primary-container text-white font-semibold">Tạo đề</button>
+      </div>
     </div>
   </div>
-
-  <div id="view-home" class="flex-1 flex flex-col">
-    <!-- header -->
-    <header class="sticky top-0 z-[60] px-4 pt-2 pb-3 pt-safe">
-      <div class="flex items-center justify-between gap-3">
-        <div class="flex items-center gap-2">
-          <div class="w-9 h-9 rounded-2xl bg-gradient-to-br from-[#00C2CC] to-[#0ABDCB] text-white flex items-center justify-center font-extrabold shadow-md">A</div>
-          <div class="leading-none"><div class="font-display font-extrabold text-[16px]">Azota <span class="text-[#00C2CC]">Quiz</span></div><div class="text-[10px] tracking-widest font-semibold text-[#6B7B8A]">XANH SM GLASS</div></div>
-        </div>
-        <div class="flex items-center gap-2">
-          <button id="btn-sample-quiz" class="h-9 px-3 rounded-full bg-white border border-black/5 text-xs font-bold flex items-center gap-1 shadow-sm active:scale-95"><span class="material-symbols-outlined text-[16px] text-[#00C2CC]">bolt</span>Đề mẫu</button>
-          <button id="btn-open-history" class="w-9 h-9 rounded-full bg-white border border-black/5 flex items-center justify-center shadow-sm"><span class="material-symbols-outlined text-[18px]">history</span></button>
-          <div class="w-9 h-9 rounded-full bg-white border border-black/5 flex items-center justify-center"><span class="material-symbols-outlined text-[18px]">person</span></div>
-        </div>
+  <div id="modal-history" class="hidden fixed inset-0 z-[80] flex items-end justify-center">
+    <button id="btn-history-backdrop" type="button" class="absolute inset-0 bg-black/40"></button>
+    <div class="relative w-full max-w-md bg-white rounded-t-[24px] p-4 space-y-3 max-h-[70dvh] flex flex-col">
+      <div class="flex items-center justify-between">
+        <h3 class="font-bold">Lịch sử đề đã lưu</h3>
+        <button id="btn-close-history" type="button" class="w-9 h-9 rounded-full bg-surface-container">Đóng</button>
       </div>
-      <!-- search pill like Xanh SM -->
-      <div class="mt-3">
-        <label class="xsm-search">
-          <span class="material-symbols-outlined text-[#8AA0B0]">search</span>
-          <input id="xsm-search-input" placeholder="Bạn muốn ôn gì?  (gõ để lọc đề / câu hỏi)" autocomplete="off">
-          <button id="btn-open-paste" type="button" class="h-9 px-3 rounded-full bg-gradient-to-r from-[#00C2CC] to-[#0ABDCB] text-white text-xs font-bold flex items-center gap-1 shrink-0"><span class="material-symbols-outlined text-[16px]">content_paste</span>Dán đề</button>
-        </label>
-        <div class="mt-2 flex items-center gap-2 text-[11px] text-[#6B7B8A]"><span class="w-1.5 h-1.5 rounded-full bg-[#00C2CC] animate-pulse"></span> Kéo thả .docx hoặc dán văn bản — parser tự bắt đáp án</div>
-      </div>
-    </header>
-
-    <!-- HOME TAB: study -->
-    <section id="tab-study" class="flex-1 flex flex-col p-4 pt-0 space-y-4">
-      <!-- duo floating cards -->
-      <div class="xsm-duo">
-        <div id="mode-practice" class="xsm-float-card mini">
-          <div class="label">Luyện tập</div><div class="sub">Xem đáp án ngay • 3 phút</div>
-          <div class="icon3d flex items-center justify-center"><span class="material-symbols-outlined" style="font-size:36px;color:#0ABDCB;opacity:.9">school</span></div>
-          <div class="mt-3 inline-flex items-center gap-1 text-[11px] font-bold text-[#0ABDCB]"><span class="w-2 h-2 rounded-full bg-[#00C2CC]"></span>Đang chọn</div>
-        </div>
-        <div id="mode-exam" class="xsm-float-card featured">
-          <div class="label text-[17px]">Thi thử</div><div class="sub">Bấm giờ • Nộp mới biết điểm • 1 phút</div>
-          <div class="icon3d flex items-center justify-center"><span class="material-symbols-outlined" style="font-size:40px;color:#0ABDCB;opacity:.95">directions_car</span></div>
-          <div class="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-[#00C2CC] opacity-10 blur-2xl"></div>
-        </div>
-      </div>
-
-      <!-- banner ready -->
-      <div id="ready-quiz-banner" class="hidden p-4 rounded-[20px] bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 flex items-center justify-between gap-3">
-        <div class="flex items-center gap-3 min-w-0"><div class="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center shrink-0"><span class="material-symbols-outlined">check</span></div>
-          <div class="min-w-0"><p id="ready-quiz-title" class="font-bold text-sm text-wrap-safe">Đề đã sẵn sàng</p><p id="ready-quiz-count" class="text-xs text-emerald-700 font-medium">0 câu</p></div></div>
-        <span class="px-2.5 py-1 rounded-full bg-emerald-500 text-white text-[11px] font-extrabold shrink-0">SẴN SÀNG</span>
-      </div>
-
-      <!-- upload glass -->
-      <div class="glass-card p-4">
-        <input type="file" id="file-input" accept=".docx" class="hidden">
-        <div id="dropzone" class="rounded-[18px] border-2 border-dashed border-black/10 p-5 text-center cursor-pointer hover:border-[#00C2CC] hover:bg-[#00C2CC]/5 transition-all">
-          <div class="w-12 h-12 rounded-2xl bg-[#E6FCFE] text-[#0ABDCB] flex items-center justify-center mx-auto mb-2"><span class="material-symbols-outlined text-[26px]">upload_file</span></div>
-          <div class="font-bold text-sm">Tải file Word (.docx)</div><div class="text-xs text-[#6B7B8A]">Kéo thả vào đây hoặc bấm chọn</div>
-          <button id="btn-browse-file" type="button" class="mt-3 px-4 py-2 rounded-full bg-[#0F2F3E] text-white text-xs font-bold">Chọn file từ máy</button>
-        </div>
-        <div class="mt-3 flex flex-wrap gap-2">
-          <span class="text-[11px] px-2.5 py-1 rounded-full bg-[#F2F7F8] border border-black/5">Bảng đáp án cuối</span>
-          <span class="text-[11px] px-2.5 py-1 rounded-full bg-[#F2F7F8] border border-black/5">Dòng "Đáp án: X"</span>
-          <span class="text-[11px] px-2.5 py-1 rounded-full bg-[#F2F7F8] border border-black/5">In đậm / gạch chân</span>
-        </div>
-      </div>
-
-      <!-- Dịch vụ khác like Xanh SM -->
-      <div>
-        <div class="flex items-center justify-between"><h3 class="font-display font-extrabold">Dịch vụ khác</h3><button class="text-xs font-bold text-[#0ABDCB]" onclick="document.querySelector('[data-tab=library]')?.click()">Xem tất cả</button></div>
-        <div class="grid grid-cols-4 gap-3 mt-3">
-          <button class="flex flex-col items-center" onclick="document.getElementById('xsm-search-input')?.focus()"><div class="xsm-service"><span class="material-symbols-outlined" style="font-size:26px;color:#0ABDCB">menu_book</span></div><div class="xsm-service-label">Đề THPT</div></button>
-          <button class="flex flex-col items-center" onclick="document.querySelector('[data-tab=mistakes]')?.click()"><div class="xsm-service"><span class="material-symbols-outlined" style="font-size:26px;color:#F59E0B">flag</span></div><div class="xsm-service-label">Hộp câu sai</div></button>
-          <button class="flex flex-col items-center" onclick="document.querySelector('[data-tab=library]')?.click()"><div class="xsm-service"><span class="material-symbols-outlined" style="font-size:26px;color:#0ABDCB">folder_special</span></div><div class="xsm-service-label">Kho đề</div></button>
-          <button class="flex flex-col items-center" id="btn-quick-search"><div class="xsm-service"><span class="material-symbols-outlined" style="font-size:26px;color:#6B7B8A">search</span></div><div class="xsm-service-label">Tìm câu</div></button>
-        </div>
-      </div>
-
-
-
-      <!-- time + switches -->
-      <div class="glass-card p-4 space-y-3">
-        <div class="flex items-center justify-between"><span class="text-xs font-bold text-[#6B7B8A]">Thời gian</span><span class="text-xs font-mono font-bold text-[#0ABDCB]">phút • ∞ = không giới hạn</span></div>
-        <div class="grid grid-cols-3 gap-2 bg-[#F2F7F8] p-1 rounded-2xl">
-          <button type="button" data-minutes="15" class="time-pill py-2 rounded-xl text-xs font-semibold">15p</button>
-          <button type="button" data-minutes="30" class="time-pill py-2 rounded-xl bg-white shadow text-[#0ABDCB] font-bold">30p</button>
-          <button type="button" data-minutes="45" class="time-pill py-2 rounded-xl text-xs font-semibold">45p</button>
-          <button type="button" data-minutes="60" class="time-pill py-2 rounded-xl text-xs font-semibold">60p</button>
-          <button type="button" data-minutes="90" class="time-pill py-2 rounded-xl text-xs font-semibold">90p</button>
-          <button type="button" data-minutes="0" class="time-pill py-2 rounded-xl text-xs font-semibold">∞</button>
-        </div>
-        <div class="pt-2 border-t border-black/5 space-y-2.5">
-          <div class="flex items-center justify-between gap-2"><div><div class="text-xs font-bold">Đảo câu hỏi</div><div class="text-[11px] text-[#6B7B8A]">Xáo vị trí câu</div></div><button id="switch-shuffle-questions" data-state="off" class="w-11 h-6 rounded-full bg-[#E2E8F0] p-0.5 relative"><div class="w-5 h-5 rounded-full bg-white shadow translate-x-0 transition-transform"></div></button></div>
-          <div class="flex items-center justify-between gap-2"><div><div class="text-xs font-bold">Đảo đáp án</div><div class="text-[11px] text-[#6B7B8A]">Xáo A-B-C-D</div></div><button id="switch-shuffle-options" data-state="off" class="w-11 h-6 rounded-full bg-[#E2E8F0] p-0.5 relative"><div class="w-5 h-5 rounded-full bg-white shadow translate-x-0 transition-transform"></div></button></div>
-        </div>
-      </div>
-
-      <button id="btn-start-quiz" class="btn-primary-gradient w-full h-[54px] rounded-full font-extrabold text-[15px] flex items-center justify-center gap-2 active:scale-[0.98]">Bắt đầu làm bài <span class="material-symbols-outlined">arrow_forward</span></button>
-      <div class="pb-6"></div>
-    </section>
-
-    <section id="tab-library" class="hidden flex-1 flex flex-col p-4 space-y-3">
-      <div><h2 class="font-display font-extrabold text-xl">Kho đề của tôi</h2><p class="text-xs text-[#6B7B8A]">Đề đã up, có tìm kiếm theo tên</p>
-        <div class="mt-2 flex gap-2"><input id="library-search" placeholder="Tìm đề..." class="flex-1 h-10 rounded-full border border-black/10 px-4 text-sm bg-white"><button id="btn-library-search" class="h-10 px-4 rounded-full bg-[#0F2F3E] text-white text-xs font-bold">Tìm</button></div>
-      </div>
-      <div id="library-quiz-list" class="space-y-2.5"></div>
-    </section>
-
-    <section id="tab-mistakes" class="hidden flex-1 flex flex-col p-4 space-y-3">
-      <div class="flex items-center justify-between"><div><h2 class="font-display font-extrabold text-xl flex items-center gap-2">Hộp câu sai <span id="mistakes-header-count" class="text-xs font-mono bg-red-100 text-red-600 px-2 py-0.5 rounded-full">(0)</span></h2><p class="text-xs text-[#6B7B8A]">Sắp theo số lần sai • có ghi chú & tag</p>
-        <div class="mt-2 flex gap-2"><input id="mistakes-search" placeholder="Lọc theo tag / từ khóa..." class="flex-1 h-9 rounded-full border border-black/10 px-3 text-xs bg-white"><button id="btn-mistakes-search" class="h-9 px-3 rounded-full bg-white border text-xs font-bold">Lọc</button></div></div></div>
-      <div class="p-4 rounded-[20px] bg-gradient-to-r from-[#00C2CC]/10 to-[#0ABDCB]/10 border border-[#00C2CC]/20 flex items-center justify-between gap-3">
-        <div><div class="font-bold text-sm">Ôn cấp tốc</div><div class="text-xs text-[#6B7B8A]">Tạo đề từ câu hay sai</div></div>
-        <button id="btn-practice-mistakes" class="px-4 py-2 rounded-full bg-[#DC2626] text-white text-xs font-bold shadow">Luyện ngay</button>
-      </div>
-      <div id="mistakes-list" class="space-y-2.5"></div>
-    </section>
-  </div>
-
-  <div id="view-quiz" class="hidden flex-1 flex flex-col">
-    <header class="sticky top-0 z-30 liquid-glass-bar pt-safe">
-      <div class="min-h-16 px-4 py-2 flex items-center justify-between gap-2">
-        <div class="flex items-center gap-2 min-w-0"><button id="btn-quiz-back" class="w-10 h-10 -ml-1 rounded-full flex items-center justify-center hover:bg-black/5"><span class="material-symbols-outlined">arrow_back_ios_new</span></button>
-          <div class="min-w-0"><div id="quiz-header-title" class="font-bold text-sm leading-tight text-wrap-safe">Phòng thi</div><div id="quiz-header-code" class="font-mono text-[11px] text-[#6B7B8A]">Câu 1 / 10</div></div></div>
-        <div class="flex items-center gap-2 shrink-0">
-          <div id="quiz-timer-container" class="px-3 py-1 rounded-full bg-white border flex items-center gap-1.5 shadow-sm"><span class="material-symbols-outlined text-[#0ABDCB] text-[16px]">timer</span><span id="quiz-timer-text" class="font-mono text-xs font-bold text-[#0ABDCB]">30:00</span></div>
-          <button id="btn-quiz-shuffle" class="w-9 h-9 rounded-full bg-[#0F2F3E] text-white flex items-center justify-center shadow active:scale-95"><span class="material-symbols-outlined text-[18px]">shuffle</span></button>
-        </div>
-      </div>
-      <div class="h-[3px] bg-black/5 overflow-hidden"><div id="quiz-header-progress" class="h-full bg-[#00C2CC] w-0 transition-all"></div></div>
-    </header>
-    <main class="flex-1 pt-3 pb-28 px-4 space-y-3 min-w-0">
-      <div class="flex items-center justify-between text-xs font-bold"><div class="flex items-center gap-1.5 text-[#0ABDCB]"><span class="w-2 h-2 rounded-full bg-[#00C2CC] animate-pulse"></span><span id="quiz-progress-text">ĐÃ LÀM 0/10</span></div><span id="quiz-progress-percent" class="font-mono text-[#0ABDCB]">0%</span></div>
-      <div class="h-2 rounded-full bg-black/5 overflow-hidden"><div id="quiz-progress-bar" class="h-full bg-[#00C2CC] w-0 transition-all"></div></div>
-      <section id="quiz-question-stream" class="space-y-4"></section>
-    </main>
-    <footer class="fixed bottom-[84px] md:bottom-[88px] inset-x-0 w-full md:max-w-[440px] md:mx-auto z-[60] px-4">
-      <div class="h-14 rounded-full bg-white/90 backdrop-blur-xl border shadow-lg flex items-center gap-2 px-2">
-        <button id="btn-quiz-matrix-toggle" class="w-11 h-11 rounded-full bg-[#F2F7F8] border flex items-center justify-center"><span class="material-symbols-outlined">apps</span></button>
-        <button id="btn-quiz-submit" class="flex-1 h-11 rounded-full bg-emerald-600 text-white font-bold text-sm flex items-center justify-center gap-1"><span class="material-symbols-outlined text-[18px]">task_alt</span>Nộp bài</button>
-      </div>
-    </footer>
-  </div>
-
-  <div id="question-matrix-modal" class="hidden fixed inset-0 z-[90]">
-    <button id="btn-question-matrix-backdrop" class="absolute inset-0 bg-black/40 backdrop-blur-sm w-full h-full"></button>
-    <section class="question-matrix-sheet absolute bottom-0 inset-x-0 w-full md:max-w-[440px] md:mx-auto max-h-[78dvh] bg-white rounded-t-[28px] shadow-2xl flex flex-col">
-      <div class="flex items-center justify-between gap-3 px-5 pt-4 pb-3 border-b"><div><h2 id="question-matrix-title" class="font-bold">Danh sách câu</h2><p id="question-matrix-summary" class="text-xs text-[#6B7B8A]">Đã làm 0/0</p></div><button id="btn-question-matrix-close" class="w-10 h-10 rounded-full bg-[#F2F7F8] flex items-center justify-center"><span class="material-symbols-outlined">close</span></button></div>
-      <div class="px-5 py-2 text-[11px] text-[#6B7B8A] flex gap-3 border-b"><span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-[#E2E8F0]"></span>Chưa</span><span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-[#00C2CC]"></span>Đã làm</span><span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>Đã cờ</span></div>
-      <div id="question-matrix-grid" class="grid grid-cols-5 gap-2 overflow-y-auto p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))]"></div>
-    </section>
-  </div>
-
-  <div id="view-result" class="hidden flex-1 flex flex-col p-4 space-y-4">
-    <div class="flex items-center justify-between pt-safe"><h2 class="font-display font-extrabold text-xl">Kết quả</h2><button id="btn-result-home" class="text-xs font-bold px-3 py-1.5 rounded-full bg-white border">Về trang chủ</button></div>
-    <section class="rounded-[28px] bg-white border shadow-xl p-6 text-center relative overflow-hidden">
-      <div class="absolute -top-16 -left-10 w-40 h-40 rounded-full bg-[#00C2CC] opacity-10 blur-3xl"></div>
-      <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#F2F7F8] text-[11px] font-bold tracking-widest"><span class="w-2 h-2 rounded-full bg-[#00C2CC] animate-pulse"></span>TỔNG KẾT • <span id="result-test-code" class="font-mono text-[#0ABDCB]">AZT-2026</span></div>
-      <div class="flex items-baseline justify-center my-2"><span id="result-score-value" class="font-display font-extrabold text-5xl text-[#0ABDCB]">8.5</span><span class="font-bold text-[#6B7B8A] ml-1">/ 10</span></div>
-      <div id="result-rating-badge" class="rounded-2xl bg-[#F2F7F8] p-2.5 flex items-center justify-center gap-2 text-xs font-bold"><span class="material-symbols-outlined text-emerald-600">emoji_events</span>Xuất sắc!</div>
-      <div class="flex items-center justify-center gap-3 mt-3 text-xs text-[#6B7B8A]"><span id="result-date-text">Hôm nay</span><span>•</span><span id="result-completion-text">10/10 câu</span></div>
-    </section>
-    <section class="grid grid-cols-2 gap-2.5">
-      <div class="p-3.5 rounded-2xl bg-white border flex items-center gap-3"><div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center"><span class="material-symbols-outlined">check_circle</span></div><div><div id="result-tile-correct" class="font-mono font-bold text-emerald-600">08</div><div class="text-[11px] text-[#6B7B8A]">Câu đúng</div></div></div>
-      <div class="p-3.5 rounded-2xl bg-white border flex items-center gap-3"><div class="w-10 h-10 rounded-xl bg-red-500/10 text-red-600 flex items-center justify-center"><span class="material-symbols-outlined">cancel</span></div><div><div id="result-tile-wrong" class="font-mono font-bold text-red-600">02</div><div class="text-[11px] text-[#6B7B8A]">Câu sai</div></div></div>
-      <div class="p-3.5 rounded-2xl bg-white border flex items-center gap-3"><div class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center"><span class="material-symbols-outlined">remove_circle_outline</span></div><div><div id="result-tile-skipped" class="font-mono font-bold">00</div><div class="text-[11px] text-[#6B7B8A]">Bỏ qua</div></div></div>
-      <div class="p-3.5 rounded-2xl bg-white border flex items-center gap-3"><div class="w-10 h-10 rounded-xl bg-[#E6FCFE] text-[#0ABDCB] flex items-center justify-center"><span class="material-symbols-outlined">timer</span></div><div><div id="result-tile-time" class="font-mono font-bold text-[#0ABDCB]">12:35</div><div class="text-[11px] text-[#6B7B8A]">Thời gian</div></div></div>
-    </section>
-    <div class="grid grid-cols-2 gap-2.5"><button id="btn-result-retake" class="h-12 rounded-full bg-[#00C2CC] text-white font-bold text-xs flex items-center justify-center gap-1"><span class="material-symbols-outlined text-[18px]">replay</span>Làm lại</button><button id="btn-result-shuffle-retake" class="h-12 rounded-full bg-white border font-bold text-xs flex items-center justify-center gap-1"><span class="material-symbols-outlined text-[18px]">shuffle</span>Đảo đề</button></div>
-    <section class="space-y-3"><div class="flex items-center justify-between"><h3 class="font-bold">Rà soát</h3><div class="flex gap-1 bg-[#F2F7F8] p-1 rounded-full text-xs"><button id="filter-review-all" class="px-3 py-1.5 rounded-full bg-[#00C2CC] text-white font-bold">Tất cả</button><button id="filter-review-wrong" class="px-3 py-1.5 rounded-full bg-white font-medium">Câu sai</button><button id="filter-review-flagged" class="px-3 py-1.5 rounded-full bg-white font-medium">Đã cờ</button></div></div><div id="result-review-list" class="space-y-3"></div></section>
-  </div>
-
-  <nav id="bottom-nav"><div class="xsm-dock">
-    <button data-tab="study" class="bottom-nav-item xsm-dock-btn active"><span class="material-symbols-outlined">home</span><span>Học & Đề</span></button>
-    <button data-tab="library" class="bottom-nav-item xsm-dock-btn"><span class="material-symbols-outlined">folder</span><span>Kho đề</span></button>
-    <button data-tab="mistakes" class="bottom-nav-item xsm-dock-btn"><span class="material-symbols-outlined">flag</span><span>Câu sai</span></button>
-    <button id="xsm-fab" type="button" class="xsm-dock-fab" title="Dán đề nhanh"><span class="material-symbols-outlined">auto_awesome</span></button>
-  </div></nav>
-
-  <!-- paste modal -->
-  <div id="modal-paste" class="hidden fixed inset-0 z-[80] flex items-end md:items-center justify-center p-0 md:p-4">
-    <button id="btn-paste-backdrop" class="absolute inset-0 bg-black/40 backdrop-blur-sm"></button>
-    <div class="relative w-full md:max-w-lg bg-white rounded-t-[28px] md:rounded-[28px] p-5 space-y-3 max-h-[78dvh] flex flex-col">
-      <div class="flex items-center justify-between"><h3 class="font-bold">Dán văn bản đề</h3><button id="btn-close-paste" class="w-9 h-9 rounded-full bg-[#F2F7F8] flex items-center justify-center"><span class="material-symbols-outlined">close</span></button></div>
-      <p class="text-xs text-[#6B7B8A]">Dán nguyên văn câu hỏi + đáp án (mỗi câu cách nhau 1 dòng trống). Parser sẽ tự bắt đáp án.</p>
-      <textarea id="paste-textarea" rows="8" placeholder="Câu 1: ...\nA. ...\nB. ...\nĐáp án: B" class="w-full rounded-2xl border p-3 text-sm flex-1"></textarea>
-      <div class="flex gap-2"><button id="btn-cancel-paste" class="flex-1 h-11 rounded-full bg-[#F2F7F8] font-bold text-sm">Hủy</button><button id="btn-confirm-paste" class="flex-1 h-11 rounded-full bg-[#00C2CC] text-white font-bold text-sm">Tạo đề</button></div>
-    </div>
-  </div>
-  <!-- confirm submit -->
-  <div id="modal-confirm-submit" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4">
-    <button id="btn-modal-backdrop" class="absolute inset-0 bg-black/40 backdrop-blur-sm"></button>
-    <div class="relative w-full max-w-sm bg-white rounded-[24px] p-5 space-y-3 shadow-2xl">
-      <h3 class="font-bold">Nộp bài?</h3><p id="modal-submit-warning-text" class="text-sm text-[#6B7B8A]">Bạn còn câu chưa làm.</p>
-      <div class="flex gap-2"><button id="btn-modal-cancel-submit" class="flex-1 h-11 rounded-full bg-[#F2F7F8] font-bold">Làm tiếp</button><button id="btn-modal-confirm-submit" class="flex-1 h-11 rounded-full bg-emerald-600 text-white font-bold">Nộp luôn</button></div>
-    </div>
-  </div>
-  <!-- history -->
-  <div id="modal-history" class="hidden fixed inset-0 z-[80] flex items-end md:items-center justify-center p-0 md:p-4">
-    <button id="btn-history-backdrop" class="absolute inset-0 bg-black/40 backdrop-blur-sm"></button>
-    <div class="relative w-full md:max-w-lg bg-white rounded-t-[28px] md:rounded-[28px] p-5 space-y-3 max-h-[78dvh] flex flex-col">
-      <div class="flex items-center justify-between"><h3 class="font-bold">Lịch sử làm bài</h3><button id="btn-close-history" class="w-9 h-9 rounded-full bg-[#F2F7F8] flex items-center justify-center"><span class="material-symbols-outlined">close</span></button></div>
       <div id="history-list" class="space-y-2 overflow-auto"></div>
     </div>
   </div>
-  <!-- note modal -->
-  <div id="modal-note" class="hidden fixed inset-0 z-[85] flex items-end md:items-center justify-center p-0 md:p-4">
-    <button id="btn-note-backdrop" class="absolute inset-0 bg-black/40 backdrop-blur-sm"></button>
-    <div class="relative w-full md:max-w-lg bg-white rounded-t-[28px] md:rounded-[28px] p-5 space-y-3">
-      <h3 class="font-bold">Ghi chú & Tag</h3><input id="note-tag-input" placeholder="Tag: vd Toán-Đạo hàm (cách nhau dấu phẩy)" class="w-full h-10 rounded-full border px-4 text-sm"><textarea id="note-text-input" rows="3" placeholder="Vì sao mình sai? Ghi lại để nhớ..." class="w-full rounded-2xl border p-3 text-sm"></textarea>
-      <div class="flex gap-2"><button id="btn-cancel-note" class="flex-1 h-11 rounded-full bg-[#F2F7F8] font-bold">Hủy</button><button id="btn-save-note" class="flex-1 h-11 rounded-full bg-[#0F2F3E] text-white font-bold">Lưu</button></div>
+  <div id="modal-note" class="hidden fixed inset-0 z-[80] flex items-end justify-center">
+    <button id="btn-note-backdrop" type="button" class="absolute inset-0 bg-black/40"></button>
+    <div class="relative w-full max-w-md bg-white rounded-t-[24px] p-4 space-y-3">
+      <h3 class="font-bold">Ghi chú câu này</h3>
+      <input id="note-tag-input" class="w-full h-10 rounded-xl border px-3 text-sm" placeholder="Tag, ví dụ Toán-Đạo hàm">
+      <textarea id="note-text-input" rows="3" class="w-full rounded-2xl border p-3 text-sm" placeholder="Vì sao mình sai"></textarea>
+      <div class="flex gap-2">
+        <button id="btn-cancel-note" type="button" class="flex-1 h-11 rounded-xl bg-surface-container font-semibold">Hủy</button>
+        <button id="btn-save-note" type="button" class="flex-1 h-11 rounded-xl bg-primary-container text-white font-semibold">Lưu</button>
+      </div>
     </div>
   </div>
 
-  <div id="update-modal-overlay" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4"><div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
-    <div id="update-modal" class="relative w-full max-w-sm rounded-[28px] bg-white p-6 text-center space-y-4 shadow-2xl">
-      <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#00C2CC] to-[#0ABDCB] text-white flex items-center justify-center mx-auto"><span class="material-symbols-outlined text-[32px]">system_update</span></div>
-      <div><h3 class="font-extrabold text-lg">Có bản cập nhật mới!</h3><div class="flex items-center justify-center gap-2 mt-1"><span id="update-version-text" class="px-2.5 py-0.5 rounded-full bg-[#E6FCFE] text-[#0ABDCB] font-mono text-xs font-bold">v1.0.1</span><span class="text-xs text-[#6B7B8A]" id="update-current-version">v1.0.2</span></div></div>
-      <div class="p-3 rounded-2xl bg-[#F2F7F8] text-left max-h-32 overflow-auto"><div id="update-notes-text" class="text-xs text-[#6B7B8A]">Có gì mới...</div></div>
-      <div class="flex flex-col gap-2"><button id="btn-update-now" class="h-[50px] rounded-full bg-gradient-to-r from-[#00C2CC] to-[#0ABDCB] text-white font-bold flex items-center justify-center gap-2"><span class="material-symbols-outlined">download</span>Cập nhật ngay</button><button id="btn-update-later" class="h-11 rounded-full bg-[#F2F7F8] font-bold text-xs">Để sau</button></div>
-    </div>
-  </div>
-</div>
-<script src="js/parser.js"></script>
-<script src="js/quiz-state.js"></script>
-<script src="js/history-db.js"></script>
-<script src="js/ui-router.js"></script>
-<script src="js/updater.js"></script>
-<script src="js/app.js"></script>
+  <!-- Application Modules -->
+  <script src="js/parser.js"></script>
+  <script src="js/quiz-state.js"></script>
+  <script src="js/history-db.js"></script>
+  <script src="js/ui-router.js"></script>
+  <script src="js/updater.js"></script>
+  <script src="js/app.js"></script>
 </body>
 </html>

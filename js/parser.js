@@ -46,10 +46,10 @@ class QuizParser {
    * @param {string} [title='Đề thi trắc nghiệm'] 
    * @returns {Object}
    */
-
-  static async parseText(rawText, title='Đề dán'){
+  static parseText(rawText, title = 'Đề dán') {
     return this.parseContent(rawText, '', title);
   }
+
   static parseContent(rawText, rawHtml = '', title = 'Đề thi trắc nghiệm') {
     if (!rawText || !rawText.trim()) {
       throw new Error('Nội dung đề thi trống. Vui lòng kiểm tra lại file hoặc văn bản nhập.');

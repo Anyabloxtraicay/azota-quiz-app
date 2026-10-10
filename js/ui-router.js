@@ -48,8 +48,6 @@ class UIRouter {
     this.matrixSummary = document.getElementById('question-matrix-summary');
     this.matrixToggle = document.getElementById('btn-quiz-matrix-toggle');
     this.questionObserver = null;
-    this._libraryCache = [];
-    this._mistakesCache = [];
     this.persistScrollPositionTimer = null;
   }
 
@@ -215,7 +213,6 @@ class UIRouter {
     const hasAnswer = !!answer;
     const hasCorrectAnswer = !!question.correctAnswer;
     const isFlagged = !!this.state.flagged[question.id];
-    const note = (window.quizApp && window.quizApp.notes && window.quizApp.notes[String(question.id)]) || null;
     const displayNumber = question.displayNumber || question.number || (index + 1);
 
     const optionsHtml = (question.options || []).map(option => {
@@ -295,6 +292,9 @@ class UIRouter {
           <span class="px-3 py-1 rounded-full bg-primary-container/10 text-primary-container font-mono-metric text-xs font-bold tracking-wide shrink-0">CÂU ${escapeHtml(displayNumber)}</span>
           <button type="button" data-quiz-action="toggle-flag" title="${isFlagged ? 'Bỏ đánh dấu' : 'Đánh dấu câu này'}" aria-label="${isFlagged ? 'Bỏ đánh dấu câu ' : 'Đánh dấu câu '}${escapeHtml(displayNumber)}" class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all ${isFlagged ? 'bg-[#ffedd5] text-[#ea580c] border border-[#fdba74]' : 'bg-surface-container text-on-surface-variant border border-outline-variant/30'}">
             <span class="material-symbols-outlined text-[20px]" ${isFlagged ? 'style="font-variation-settings: \'FILL\' 1;"' : ''}>flag</span>
+          </button>
+          <button type="button" data-quiz-action="open-note" class="w-9 h-9 rounded-xl bg-surface-container text-on-surface-variant border border-outline-variant/30 flex items-center justify-center shrink-0" title="Ghi chú">
+            <span class="material-symbols-outlined text-[20px]">edit_note</span>
           </button>
         </div>
         <p class="font-body text-[16px] font-semibold text-on-surface leading-relaxed text-wrap-safe">${escapeHtml(question.text || '')}</p>
@@ -545,10 +545,6 @@ class UIRouter {
   // RENDER TAB KHO ĐỀ CỦA TÔI (LIBRARY TAB)
   // =========================================================================
 
-  filterLibrary(keyword){ const kw=(keyword||'').toLowerCase().trim(); const list=document.getElementById('library-quiz-list'); if(!list) return; if(!kw){ this.renderLibraryList(this._libraryCache); return;} const filtered=this._libraryCache.filter(q=> (q.title||'').toLowerCase().includes(kw)); this.renderLibraryList(filtered); }
-  filterMistakes(keyword, notesMap){ const kw=(keyword||'').toLowerCase().trim(); if(!kw){ this.renderMistakesList(this._mistakesCache, notesMap); return;} const filtered=this._mistakesCache.filter(m=> ((m.text||m.questionText||'')+' '+((notesMap&&notesMap[m.id]&&notesMap[m.id].tag)||'')+' '+((notesMap&&notesMap[m.id]&&notesMap[m.id].text)||'')).toLowerCase().includes(kw)); this.renderMistakesList(filtered, notesMap); }
-  renderLibraryList(quizzes){ const list=document.getElementById('library-quiz-list'); if(!list) return; if(!quizzes||!quizzes.length){ list.innerHTML='<p class="text-sm text-[#6B7B8A] text-center py-8">Chưa có đề nào. Up .docx hoặc dán đề nhé.</p>'; return; } list.innerHTML=quizzes.map(q=>`<div class="p-4 rounded-[20px] bg-white border flex items-center justify-between gap-3"><div class="min-w-0"><div class="font-bold text-sm truncate">${escapeHtml(q.title||'Đề')}</div><div class="text-xs text-[#6B7B8A]">${q.totalQuestions||'?'} câu</div></div><div class="flex gap-1.5 shrink-0"><button onclick="window.quizApp.loadQuizFromData('${q.id}')" class="h-8 px-3 rounded-full bg-[#00C2CC] text-white text-xs font-bold">Làm</button><button onclick="window.quizApp.deleteQuiz('${q.id}')" class="w-8 h-8 rounded-full bg-[#F2F7F8] flex items-center justify-center"><span class="material-symbols-outlined text-[16px]">delete</span></button></div></div>`).join(''); }
-  renderMistakesList(mistakes, notesMap){ const list=document.getElementById('mistakes-list'); if(!list) return; const notes=notesMap|| (window.quizApp&&window.quizApp.notes)||{}; if(!mistakes||!mistakes.length){ list.innerHTML='<p class="text-sm text-[#6B7B8A] text-center py-8">Chưa có câu sai nào 🎉</p>'; return; } list.innerHTML=mistakes.map(m=>{const n=notes[m.id]||{}; return `<div class="p-4 rounded-[20px] bg-white border space-y-2"><div class="text-sm font-medium">${escapeHtml(m.text||m.questionText||'')}</div>${n.tag?`<span class="inline-block text-[11px] px-2 py-0.5 rounded-full bg-[#E6FCFE] text-[#0ABDCB] font-bold">${escapeHtml(n.tag)}</span>`:''}${n.text?`<div class="text-xs text-[#6B7B8A] bg-[#F2F7F8] p-2 rounded-xl">${escapeHtml(n.text)}</div>`:''}<div class="flex gap-2"><button onclick="window.quizApp.resolveMistake('${m.id}')" class="flex-1 h-8 rounded-full bg-[#F2F7F8] text-xs font-bold">Đã thuộc</button><button onclick="window.quizApp.openNoteModal('${m.id}')" class="flex-1 h-8 rounded-full bg-[#0F2F3E] text-white text-xs font-bold">Ghi chú</button></div></div>`}).join(''); }
   async loadLibraryTab() {
     const listEl = document.getElementById('library-quiz-list');
     if (!listEl) return;
@@ -560,7 +556,7 @@ class UIRouter {
       </div>
     `;
 
-    const quizzes = await this.db.getAllQuizzes(); this._libraryCache = quizzes;
+    const quizzes = await this.db.getAllQuizzes();
     if (quizzes.length === 0) {
       listEl.innerHTML = `
         <div class="p-10 text-center text-on-surface-variant rounded-2xl bg-surface-container-low flex flex-col items-center">
@@ -621,7 +617,7 @@ class UIRouter {
     const practiceBtn = document.getElementById('btn-practice-mistakes');
     if (!listEl) return;
 
-    const mistakes = await this.db.getAllMistakes(); this._mistakesCache = mistakes;
+    const mistakes = await this.db.getAllMistakes();
 
     if (headerEl) headerEl.textContent = `(${mistakes.length} câu)`;
     if (practiceBtn) {
