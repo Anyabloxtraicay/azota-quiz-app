@@ -346,6 +346,24 @@ class App {
     }
 
     // 11. Phím tắt bàn phím
+
+    // Delegated fallback for quiz footer & matrix (if direct bind missed)
+    document.addEventListener('click', (e) => {
+      const t = e.target.closest('#btn-quiz-submit');
+      if (t) { e.preventDefault(); this.confirmSubmitQuiz(); return; }
+      const m = e.target.closest('#btn-quiz-matrix-toggle');
+      if (m) { e.preventDefault(); this.router.openQuestionMatrix(); return; }
+      const c = e.target.closest('#btn-question-matrix-close');
+      if (c) { e.preventDefault(); this.router.closeQuestionMatrix(); return; }
+      const b = e.target.closest('#btn-question-matrix-backdrop');
+      if (b) { e.preventDefault(); this.router.closeQuestionMatrix(); return; }
+      const mc = e.target.closest('#btn-modal-cancel-submit');
+      if (mc) { e.preventDefault(); this.closeConfirmSubmit(); return; }
+      const mf = e.target.closest('#btn-modal-confirm-submit');
+      if (mf) { e.preventDefault(); this.closeConfirmSubmit(); this.submitQuiz(); return; }
+      const bb = e.target.closest('#btn-modal-backdrop');
+      if (bb) { e.preventDefault(); this.closeConfirmSubmit(); return; }
+    });
     this.setupKeyboardShortcuts();
   }
 
